@@ -1,0 +1,10 @@
+{
+  "name": "dtoken-user-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "serve": "node src/server.js"
+  }
+}

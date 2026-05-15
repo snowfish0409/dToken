@@ -1,0 +1,2855 @@
+{
+  "network": "mainnet",
+  "chain_id": 1,
+  "contract": "DTokenProtocolV0Upgradeable",
+  "token_contract": "DTokenFixed",
+  "proxy": "DTokenProxy",
+  "token_address": "0x28219c4417d6095C66a04940D84cba13075b768b",
+  "protocol_implementation_address": "0xad055A36d1F442170480A116184f38b800DE4645",
+  "implementation_address": "0xad055A36d1F442170480A116184f38b800DE4645",
+  "protocol_proxy_address": "0xc706bd1f6F1457A8953241aF64F93bd5406d751B",
+  "protocol_address": "0xc706bd1f6F1457A8953241aF64F93bd5406d751B",
+  "contract_address": "0xc706bd1f6F1457A8953241aF64F93bd5406d751B",
+  "upgrade_admin": "0x6973CE0B405637a704c0B367DbD3A302a26e2952",
+  "safe_address": "0x6973CE0B405637a704c0B367DbD3A302a26e2952",
+  "safe_threshold": 3,
+  "safe_owners": [
+    "0x18307C40F2FAA7516c99a2c9D80D235b5FbeaeA8",
+    "0xab6D8b730763c044f68780b951a33E150D7A6C60",
+    "0xEEc4d0595A9c8204d3afD8Fc8347278520000159"
+  ],
+  "deployer": "0x0E691Caf46928B70b6337effc7Dd029DE4C15651",
+  "initial_supply_recipient": "0x6973CE0B405637a704c0B367DbD3A302a26e2952",
+  "initial_supply": "10000000000000000000000000000000000",
+  "token_transaction_hash": "0x184e460cad8a3a47019cde5636cff9dce7ab27876f6ac05b4ec4310746c55973",
+  "implementation_transaction_hash": "0xfed6f3c0e9b0b1b4d2df4dbb708440331327dd749f78c50d31fcb497ee986286",
+  "proxy_transaction_hash": "0x10456f415c9bb512bd92c6765e17657040d2a8d065519a862afa1968a53c6fbe",
+  "token_block_number": 25095398,
+  "implementation_block_number": 25095399,
+  "proxy_block_number": 25095400,
+  "token_gas_used": 366003,
+  "implementation_gas_used": 1694547,
+  "proxy_gas_used": 192794,
+  "solc_version": "0.8.24",
+  "optimizer": true,
+  "optimizer_runs": 200,
+  "via_ir": true,
+  "initializer_args": [
+    "0x6973CE0B405637a704c0B367DbD3A302a26e2952",
+    "0x28219c4417d6095C66a04940D84cba13075b768b"
+  ],
+  "initializer_calldata": "0x485cc9550000000000000000000000006973ce0b405637a704c0b367dbd3a302a26e295200000000000000000000000028219c4417d6095c66a04940d84cba13075b768b",
+  "name": "dToken",
+  "symbol": "DTOKEN",
+  "decimals": 18,
+  "total_supply": "10000000000000000000000000000000000",
+  "protocol_version": "0",
+  "signing_version": "0",
+  "challenge_period_seconds": 600,
+  "source_hashes": {
+    "DTokenFixed.sol": "cf2c119c59582bd81612ae3c5dacf03153c079618415e1c0fdd452e0c486f230",
+    "DTokenProtocolCurrentUpgradeable.sol": "cc34b1d00b8ff7a11c2bcf5c0af80d0541db804793125dc5a33692f646bb64ee",
+    "DTokenProxy.sol": "7d1dc39c95a767d1f8d7b128a63f882bac4ca00a75f13c4eccaca4ce022192f0"
+  },
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "AlreadyInitialized",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BudgetExceeded",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ChallengeExpired",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ChallengeStillActive",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "HandshakeNotFound",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "HandshakeNotOpen",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidAmount",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidImplementation",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidMeteringHash",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidSignature",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidStatus",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NonMonotonicSpend",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotInitializing",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "SettlementFromFuture",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "TokenTransferFailed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "Unauthorized",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "UpgradeCallFailed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroAddress",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "userWallet",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "provider",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "userSessionSigner",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "handshakeCredentialHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "offerId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "metadataHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "escrowAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "HandshakeOpened",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "offerId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "metadataHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "HandshakeOpenedForOffer",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "providerAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "userRefund",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "settlementProofHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "HandshakeSettled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "version",
+          "type": "uint8"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "admin",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        }
+      ],
+      "name": "Initialized",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "previousDrift",
+          "type": "uint64"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "newDrift",
+          "type": "uint64"
+        }
+      ],
+      "name": "MaxSettlementFutureDriftUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "provider",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "offerId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "metadataHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "metadataURI",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "version",
+          "type": "uint64"
+        }
+      ],
+      "name": "ProviderAnnounced",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousAdmin",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "pendingAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "UpgradeAdminTransferStarted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousAdmin",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "UpgradeAdminTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "implementation",
+          "type": "address"
+        }
+      ],
+      "name": "Upgraded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "pendingCloseAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "settlementHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "UserBreakupChallenged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "pendingCloseAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "settlementProofHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "challengeDeadline",
+          "type": "uint64"
+        }
+      ],
+      "name": "UserBreakupRequested",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "FIXED_CHALLENGE_PERIOD_SECONDS",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "HANDSHAKE_CREDENTIAL_DOMAIN",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "PROTOCOL_VERSION",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "SIGNING_VERSION",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "USER_DTOKEN_SETTLEMENT_TYPEHASH",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "acceptUpgradeAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "metadataURI",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "metadataHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.ProviderUpdate",
+          "name": "update",
+          "type": "tuple"
+        }
+      ],
+      "name": "announceProvider",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "challengePeriod",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "challengePeriodSeconds",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "handshakeId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "cumulativeSpent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "meteringHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "signedAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.UserDTokenSettlement",
+          "name": "settlement",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "userSignature",
+          "type": "bytes"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "metadataURI",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "metadataHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.ProviderUpdate",
+          "name": "refreshUpdate",
+          "type": "tuple"
+        }
+      ],
+      "name": "challengeUserBreakupWithUserSettlement",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "dToken",
+      "outputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "domainSeparator",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "escrowedSupply",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "finalizeUserBreakup",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getHandshake",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "enum DTokenProtocolV0Upgradeable.HandshakeStatus",
+              "name": "status",
+              "type": "uint8"
+            },
+            {
+              "internalType": "address",
+              "name": "userWallet",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "providerOperator",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "userSessionSigner",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "handshakeCredentialHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "escrowAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "pendingCloseAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint64",
+              "name": "challengeDeadline",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "pendingSettlementProofHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "providerOfferId",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.Handshake",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "handshakeCredential",
+          "type": "bytes32"
+        }
+      ],
+      "name": "handshakeCredentialHashFor",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "initialAdmin",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "tokenAddress",
+          "type": "address"
+        }
+      ],
+      "name": "initialize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "maxSettlementFutureDriftSeconds",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "name",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "providerOperator",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "metadataHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "offerIdFor",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "providerOperator",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "metadataURI",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "metadataHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.ProviderUpdate",
+          "name": "provider",
+          "type": "tuple"
+        },
+        {
+          "internalType": "address",
+          "name": "userSessionSigner",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "handshakeCredentialHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "escrowAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "openHandshakeWithProvider",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pendingUpgradeAdmin",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "metadataURI",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "metadataHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.ProviderUpdate",
+          "name": "refreshUpdate",
+          "type": "tuple"
+        }
+      ],
+      "name": "providerClaimUserBreakup",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "metadataURI",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "metadataHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.ProviderUpdate",
+          "name": "refreshUpdate",
+          "type": "tuple"
+        }
+      ],
+      "name": "providerFinalizeUserBreakup",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "handshakeId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "cumulativeSpent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "meteringHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "signedAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.UserDTokenSettlement",
+          "name": "settlement",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "userSignature",
+          "type": "bytes"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "metadataURI",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "metadataHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.ProviderUpdate",
+          "name": "refreshUpdate",
+          "type": "tuple"
+        }
+      ],
+      "name": "providerSettleWithUserSettlement",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "proxiableUUID",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "handshakeId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "cumulativeSpent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "meteringHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "signedAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.UserDTokenSettlement",
+          "name": "settlement",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "userSignature",
+          "type": "bytes"
+        }
+      ],
+      "name": "requestUserBreakupWithUserSettlement",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "newDrift",
+          "type": "uint64"
+        }
+      ],
+      "name": "setMaxSettlementFutureDrift",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "transferUpgradeAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "upgradeAdmin",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newImplementation",
+          "type": "address"
+        }
+      ],
+      "name": "upgradeTo",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newImplementation",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes",
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "name": "upgradeToAndCall",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "handshakeId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "cumulativeSpent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "meteringHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "signedAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.UserDTokenSettlement",
+          "name": "settlement",
+          "type": "tuple"
+        }
+      ],
+      "name": "userSettlementDigest",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "handshakeId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "cumulativeSpent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "meteringHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "signedAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.UserDTokenSettlement",
+          "name": "settlement",
+          "type": "tuple"
+        }
+      ],
+      "name": "userSettlementStructHash",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "handshakeId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "cumulativeSpent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "meteringHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "signedAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.UserDTokenSettlement",
+          "name": "settlement",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "signature",
+          "type": "bytes"
+        }
+      ],
+      "name": "verifyUserSettlement",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "protocol_abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "AlreadyInitialized",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BudgetExceeded",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ChallengeExpired",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ChallengeStillActive",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "HandshakeNotFound",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "HandshakeNotOpen",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidAmount",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidImplementation",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidMeteringHash",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidSignature",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidStatus",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NonMonotonicSpend",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotInitializing",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "SettlementFromFuture",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "TokenTransferFailed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "Unauthorized",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "UpgradeCallFailed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroAddress",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "userWallet",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "provider",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "userSessionSigner",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "handshakeCredentialHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "offerId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "metadataHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "escrowAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "HandshakeOpened",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "offerId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "metadataHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "HandshakeOpenedForOffer",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "providerAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "userRefund",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "settlementProofHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "HandshakeSettled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "version",
+          "type": "uint8"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "admin",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        }
+      ],
+      "name": "Initialized",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "previousDrift",
+          "type": "uint64"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "newDrift",
+          "type": "uint64"
+        }
+      ],
+      "name": "MaxSettlementFutureDriftUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "provider",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "offerId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "metadataHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "metadataURI",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "version",
+          "type": "uint64"
+        }
+      ],
+      "name": "ProviderAnnounced",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousAdmin",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "pendingAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "UpgradeAdminTransferStarted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousAdmin",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "UpgradeAdminTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "implementation",
+          "type": "address"
+        }
+      ],
+      "name": "Upgraded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "pendingCloseAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "settlementHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "UserBreakupChallenged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "pendingCloseAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "settlementProofHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "challengeDeadline",
+          "type": "uint64"
+        }
+      ],
+      "name": "UserBreakupRequested",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "FIXED_CHALLENGE_PERIOD_SECONDS",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "HANDSHAKE_CREDENTIAL_DOMAIN",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "PROTOCOL_VERSION",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "SIGNING_VERSION",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "USER_DTOKEN_SETTLEMENT_TYPEHASH",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "acceptUpgradeAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "metadataURI",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "metadataHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.ProviderUpdate",
+          "name": "update",
+          "type": "tuple"
+        }
+      ],
+      "name": "announceProvider",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "challengePeriod",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "challengePeriodSeconds",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "handshakeId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "cumulativeSpent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "meteringHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "signedAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.UserDTokenSettlement",
+          "name": "settlement",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "userSignature",
+          "type": "bytes"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "metadataURI",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "metadataHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.ProviderUpdate",
+          "name": "refreshUpdate",
+          "type": "tuple"
+        }
+      ],
+      "name": "challengeUserBreakupWithUserSettlement",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "dToken",
+      "outputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "domainSeparator",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "escrowedSupply",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "finalizeUserBreakup",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getHandshake",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "enum DTokenProtocolV0Upgradeable.HandshakeStatus",
+              "name": "status",
+              "type": "uint8"
+            },
+            {
+              "internalType": "address",
+              "name": "userWallet",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "providerOperator",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "userSessionSigner",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "handshakeCredentialHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "escrowAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "pendingCloseAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint64",
+              "name": "challengeDeadline",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "pendingSettlementProofHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "providerOfferId",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.Handshake",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "handshakeCredential",
+          "type": "bytes32"
+        }
+      ],
+      "name": "handshakeCredentialHashFor",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "initialAdmin",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "tokenAddress",
+          "type": "address"
+        }
+      ],
+      "name": "initialize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "maxSettlementFutureDriftSeconds",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "name",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "providerOperator",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "metadataHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "offerIdFor",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "providerOperator",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "metadataURI",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "metadataHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.ProviderUpdate",
+          "name": "provider",
+          "type": "tuple"
+        },
+        {
+          "internalType": "address",
+          "name": "userSessionSigner",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "handshakeCredentialHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "escrowAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "openHandshakeWithProvider",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pendingUpgradeAdmin",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "metadataURI",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "metadataHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.ProviderUpdate",
+          "name": "refreshUpdate",
+          "type": "tuple"
+        }
+      ],
+      "name": "providerClaimUserBreakup",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "handshakeId",
+          "type": "bytes32"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "metadataURI",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "metadataHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.ProviderUpdate",
+          "name": "refreshUpdate",
+          "type": "tuple"
+        }
+      ],
+      "name": "providerFinalizeUserBreakup",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "handshakeId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "cumulativeSpent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "meteringHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "signedAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.UserDTokenSettlement",
+          "name": "settlement",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "userSignature",
+          "type": "bytes"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "metadataURI",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "metadataHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.ProviderUpdate",
+          "name": "refreshUpdate",
+          "type": "tuple"
+        }
+      ],
+      "name": "providerSettleWithUserSettlement",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "proxiableUUID",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "handshakeId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "cumulativeSpent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "meteringHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "signedAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.UserDTokenSettlement",
+          "name": "settlement",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "userSignature",
+          "type": "bytes"
+        }
+      ],
+      "name": "requestUserBreakupWithUserSettlement",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "newDrift",
+          "type": "uint64"
+        }
+      ],
+      "name": "setMaxSettlementFutureDrift",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "transferUpgradeAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "upgradeAdmin",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newImplementation",
+          "type": "address"
+        }
+      ],
+      "name": "upgradeTo",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newImplementation",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes",
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "name": "upgradeToAndCall",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "handshakeId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "cumulativeSpent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "meteringHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "signedAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.UserDTokenSettlement",
+          "name": "settlement",
+          "type": "tuple"
+        }
+      ],
+      "name": "userSettlementDigest",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "handshakeId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "cumulativeSpent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "meteringHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "signedAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.UserDTokenSettlement",
+          "name": "settlement",
+          "type": "tuple"
+        }
+      ],
+      "name": "userSettlementStructHash",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "handshakeId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "cumulativeSpent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "meteringHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "signedAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DTokenProtocolV0Upgradeable.UserDTokenSettlement",
+          "name": "settlement",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "signature",
+          "type": "bytes"
+        }
+      ],
+      "name": "verifyUserSettlement",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "token_abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "initialSupplyRecipient",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidAmount",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroAddress",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "spender",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "Approval",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "Transfer",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "DTOKEN_UNIT",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "INITIAL_SUPPLY",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "allowance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "spender",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "approve",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "balanceOf",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "decimals",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "name",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "symbol",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalSupply",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "transfer",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "transferFrom",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "proxy_abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "initialImplementation",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes",
+          "name": "initializationData",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "payable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "InitializationFailed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidImplementation",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "implementation",
+          "type": "address"
+        }
+      ],
+      "name": "Upgraded",
+      "type": "event"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "fallback"
+    },
+    {
+      "inputs": [],
+      "name": "implementation",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "impl",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "receive"
+    }
+  ],
+  "standard_json_input": {
+    "language": "Solidity",
+    "sources": {
+      "DTokenFixed.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.24;\n\n/// @title dToken Fixed Supply ERC20\n/// @notice Minimal fixed-supply ERC20 used by the dToken protocol. The token has no mint path after deployment.\ncontract DTokenFixed {\n    string public constant name = \"dToken\";\n    string public constant symbol = \"DTOKEN\";\n    uint8 public constant decimals = 18;\n    uint256 public constant DTOKEN_UNIT = 1e18;\n    uint256 public constant INITIAL_SUPPLY = 10_000_000_000_000_000 * DTOKEN_UNIT;\n\n    uint256 public immutable totalSupply;\n\n    mapping(address => uint256) public balanceOf;\n    mapping(address => mapping(address => uint256)) public allowance;\n\n    event Transfer(address indexed from, address indexed to, uint256 amount);\n    event Approval(address indexed owner, address indexed spender, uint256 amount);\n\n    error ZeroAddress();\n    error InvalidAmount();\n\n    constructor(address initialSupplyRecipient) {\n        if (initialSupplyRecipient == address(0)) revert ZeroAddress();\n        totalSupply = INITIAL_SUPPLY;\n        balanceOf[initialSupplyRecipient] = INITIAL_SUPPLY;\n        emit Transfer(address(0), initialSupplyRecipient, INITIAL_SUPPLY);\n    }\n\n    function transfer(address to, uint256 amount) external returns (bool) {\n        _transfer(msg.sender, to, amount);\n        return true;\n    }\n\n    function approve(address spender, uint256 amount) external returns (bool) {\n        if (spender == address(0)) revert ZeroAddress();\n        allowance[msg.sender][spender] = amount;\n        emit Approval(msg.sender, spender, amount);\n        return true;\n    }\n\n    function transferFrom(address from, address to, uint256 amount) external returns (bool) {\n        uint256 allowed = allowance[from][msg.sender];\n        if (allowed != type(uint256).max) {\n            if (allowed < amount) revert InvalidAmount();\n            unchecked {\n                allowance[from][msg.sender] = allowed - amount;\n            }\n            emit Approval(from, msg.sender, allowance[from][msg.sender]);\n        }\n        _transfer(from, to, amount);\n        return true;\n    }\n\n    function _transfer(address from, address to, uint256 amount) internal {\n        if (to == address(0)) revert ZeroAddress();\n        if (balanceOf[from] < amount) revert InvalidAmount();\n        unchecked {\n            balanceOf[from] -= amount;\n            balanceOf[to] += amount;\n        }\n        emit Transfer(from, to, amount);\n    }\n}\n"
+      },
+      "DTokenProtocolCurrentUpgradeable.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.24;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(address from, address to, uint256 amount) external returns (bool);\n}\n\n/// @title dToken Protocol V0 Upgradeable\n/// @notice Clean current protocol contract for LLM provider discovery, dToken escrow, user-signed\n///         cumulative settlement proofs, challenge-period exits, and settlement.\n/// @dev The ERC20 token is intentionally separate and fixed-supply. This contract only holds escrowed dToken.\ncontract DTokenProtocolV0Upgradeable {\n    string public constant name = \"dToken\";\n    string public constant SIGNING_VERSION = \"0\";\n    string public constant PROTOCOL_VERSION = \"0\";\n\n    bytes32 public constant USER_DTOKEN_SETTLEMENT_TYPEHASH = keccak256(\n        \"UserDTokenSettlement(bytes32 handshakeId,uint256 cumulativeSpent,bytes32 meteringHash,uint64 signedAt)\"\n    );\n    bytes32 public constant HANDSHAKE_CREDENTIAL_DOMAIN = keccak256(\"dtoken-handshake-v0\");\n    uint64 public constant FIXED_CHALLENGE_PERIOD_SECONDS = 10 minutes;\n\n    bytes32 private constant _EIP712_DOMAIN_TYPEHASH =\n        keccak256(\"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)\");\n    bytes32 private constant _IMPLEMENTATION_SLOT =\n        0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;\n    uint256 private constant _SECP256K1_HALF_ORDER =\n        0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0;\n    address private immutable __self = address(this);\n\n    enum HandshakeStatus {\n        None,\n        Open,\n        UserBreakupPending,\n        Settled\n    }\n\n    struct ProviderUpdate {\n        string metadataURI;\n        bytes32 metadataHash;\n    }\n\n    struct Handshake {\n        HandshakeStatus status;\n        address userWallet;\n        address providerOperator;\n        address userSessionSigner;\n        bytes32 handshakeCredentialHash;\n        uint256 escrowAmount;\n        uint256 pendingCloseAmount;\n        uint64 challengeDeadline;\n        bytes32 pendingSettlementProofHash;\n        bytes32 providerOfferId;\n    }\n\n    struct UserDTokenSettlement {\n        bytes32 handshakeId;\n        uint256 cumulativeSpent;\n        bytes32 meteringHash;\n        uint64 signedAt;\n    }\n\n    uint8 private _initialized;\n    bool private _initializing;\n\n    address public upgradeAdmin;\n    address public pendingUpgradeAdmin;\n    uint64 private _legacyChallengePeriodSeconds;\n    uint64 public maxSettlementFutureDriftSeconds;\n\n    IERC20 public dToken;\n    uint256 public escrowedSupply;\n\n    mapping(bytes32 => Handshake) private _handshakes;\n\n    uint256[48] private __gap;\n\n    event Initialized(uint8 version, address indexed admin, address indexed token);\n    event UpgradeAdminTransferStarted(address indexed previousAdmin, address indexed pendingAdmin);\n    event UpgradeAdminTransferred(address indexed previousAdmin, address indexed newAdmin);\n    event Upgraded(address indexed implementation);\n    event MaxSettlementFutureDriftUpdated(uint64 previousDrift, uint64 newDrift);\n\n    event ProviderAnnounced(\n        address indexed provider,\n        bytes32 indexed offerId,\n        bytes32 indexed metadataHash,\n        string metadataURI,\n        uint64 version\n    );\n\n    event HandshakeOpened(\n        bytes32 indexed handshakeId,\n        address indexed userWallet,\n        address indexed provider,\n        address userSessionSigner,\n        bytes32 handshakeCredentialHash,\n        bytes32 offerId,\n        bytes32 metadataHash,\n        uint256 escrowAmount\n    );\n    event HandshakeOpenedForOffer(\n        bytes32 indexed handshakeId,\n        bytes32 indexed offerId,\n        bytes32 indexed metadataHash\n    );\n\n    event UserBreakupRequested(\n        bytes32 indexed handshakeId,\n        uint256 pendingCloseAmount,\n        bytes32 indexed settlementProofHash,\n        uint64 challengeDeadline\n    );\n    event UserBreakupChallenged(\n        bytes32 indexed handshakeId,\n        uint256 pendingCloseAmount,\n        bytes32 indexed settlementHash\n    );\n    event HandshakeSettled(\n        bytes32 indexed handshakeId,\n        uint256 providerAmount,\n        uint256 userRefund,\n        bytes32 settlementProofHash\n    );\n    error AlreadyInitialized();\n    error NotInitializing();\n    error InvalidImplementation();\n    error UpgradeCallFailed();\n    error TokenTransferFailed();\n    error ZeroAddress();\n    error InvalidAmount();\n    error Unauthorized();\n    error HandshakeNotFound();\n    error HandshakeNotOpen();\n    error InvalidStatus();\n    error InvalidSignature();\n    error BudgetExceeded();\n    error NonMonotonicSpend();\n    error InvalidMeteringHash();\n    error SettlementFromFuture();\n    error ChallengeStillActive();\n    error ChallengeExpired();\n\n    modifier initializer() {\n        if (_initialized != 0) revert AlreadyInitialized();\n        _initialized = 1;\n        _initializing = true;\n        _;\n        _initializing = false;\n    }\n\n    modifier onlyUpgradeAdmin() {\n        if (msg.sender != upgradeAdmin) revert Unauthorized();\n        _;\n    }\n\n    modifier onlyProxy() {\n        if (address(this) == __self || _getImplementation() != __self) revert InvalidImplementation();\n        _;\n    }\n\n    modifier notDelegated() {\n        if (address(this) != __self) revert InvalidImplementation();\n        _;\n    }\n\n    constructor() {\n        _initialized = type(uint8).max;\n    }\n\n    function initialize(address initialAdmin, address tokenAddress)\n        external\n        initializer\n    {\n        if (initialAdmin == address(0) || tokenAddress == address(0)) revert ZeroAddress();\n        if (tokenAddress.code.length == 0) revert ZeroAddress();\n        upgradeAdmin = initialAdmin;\n        dToken = IERC20(tokenAddress);\n        maxSettlementFutureDriftSeconds = 5 minutes;\n        emit Initialized(0, initialAdmin, tokenAddress);\n    }\n\n    function proxiableUUID() external view notDelegated returns (bytes32) {\n        return _IMPLEMENTATION_SLOT;\n    }\n\n    function upgradeTo(address newImplementation) external onlyProxy onlyUpgradeAdmin {\n        _upgradeToAndCall(newImplementation, \"\");\n    }\n\n    function upgradeToAndCall(address newImplementation, bytes calldata data) external payable onlyProxy onlyUpgradeAdmin {\n        _upgradeToAndCall(newImplementation, data);\n    }\n\n    function transferUpgradeAdmin(address newAdmin) external onlyUpgradeAdmin {\n        if (newAdmin == address(0)) revert ZeroAddress();\n        pendingUpgradeAdmin = newAdmin;\n        emit UpgradeAdminTransferStarted(upgradeAdmin, newAdmin);\n    }\n\n    function acceptUpgradeAdmin() external {\n        if (msg.sender != pendingUpgradeAdmin) revert Unauthorized();\n        address previous = upgradeAdmin;\n        upgradeAdmin = pendingUpgradeAdmin;\n        pendingUpgradeAdmin = address(0);\n        emit UpgradeAdminTransferred(previous, upgradeAdmin);\n    }\n\n    function setMaxSettlementFutureDrift(uint64 newDrift) external onlyUpgradeAdmin {\n        if (newDrift > 1 hours) revert InvalidAmount();\n        uint64 previous = maxSettlementFutureDriftSeconds;\n        maxSettlementFutureDriftSeconds = newDrift;\n        emit MaxSettlementFutureDriftUpdated(previous, newDrift);\n    }\n\n    function challengePeriod() external pure returns (uint64) {\n        return FIXED_CHALLENGE_PERIOD_SECONDS;\n    }\n\n    function challengePeriodSeconds() external pure returns (uint64) {\n        return FIXED_CHALLENGE_PERIOD_SECONDS;\n    }\n\n    function domainSeparator() public view returns (bytes32) {\n        return keccak256(\n            abi.encode(\n                _EIP712_DOMAIN_TYPEHASH,\n                keccak256(bytes(name)),\n                keccak256(bytes(SIGNING_VERSION)),\n                block.chainid,\n                address(this)\n            )\n        );\n    }\n\n    function handshakeCredentialHashFor(bytes32 handshakeCredential) public view returns (bytes32) {\n        if (handshakeCredential == bytes32(0)) revert InvalidAmount();\n        return keccak256(abi.encode(HANDSHAKE_CREDENTIAL_DOMAIN, block.chainid, address(this), handshakeCredential));\n    }\n\n    function announceProvider(ProviderUpdate calldata update) external {\n        _validateProviderUpdate(update);\n        bytes32 offerId = offerIdFor(msg.sender, update.metadataHash);\n        _emitProviderAnnouncement(msg.sender, offerId, update.metadataHash, update.metadataURI, uint64(block.number));\n    }\n\n    function _validateProviderUpdate(ProviderUpdate calldata update) internal pure {\n        if (bytes(update.metadataURI).length == 0 || update.metadataHash == bytes32(0)) revert InvalidAmount();\n    }\n\n    function _emitProviderAnnouncement(\n        address providerOperator,\n        bytes32 offerId,\n        bytes32 metadataHash,\n        string memory metadataURI,\n        uint64 version\n    ) internal {\n        emit ProviderAnnounced(\n            providerOperator,\n            offerId,\n            metadataHash,\n            metadataURI,\n            version\n        );\n    }\n\n    function openHandshakeWithProvider(\n        address providerOperator,\n        ProviderUpdate calldata provider,\n        address userSessionSigner,\n        bytes32 handshakeCredentialHash,\n        uint256 escrowAmount\n    ) external returns (bytes32 handshakeId) {\n        bytes32 offerId = offerIdFor(providerOperator, provider.metadataHash);\n        return _openHandshake(\n            provider,\n            offerId,\n            providerOperator,\n            userSessionSigner,\n            handshakeCredentialHash,\n            escrowAmount\n        );\n    }\n\n    function _openHandshake(\n        ProviderUpdate calldata provider,\n        bytes32 offerId,\n        address providerOperator,\n        address userSessionSigner,\n        bytes32 handshakeCredentialHash,\n        uint256 escrowAmount\n    ) internal returns (bytes32 handshakeId) {\n        _validateProviderUpdate(provider);\n        if (userSessionSigner == address(0) || providerOperator == address(0)) revert ZeroAddress();\n        if (handshakeCredentialHash == bytes32(0)) revert InvalidAmount();\n        if (escrowAmount == 0) revert InvalidAmount();\n\n        handshakeId = keccak256(\n            abi.encode(\n                \"DTOKEN_HANDSHAKE_V10\",\n                block.chainid,\n                address(this),\n                msg.sender,\n                providerOperator,\n                userSessionSigner,\n                handshakeCredentialHash,\n                escrowAmount,\n                offerId,\n                provider.metadataHash,\n                keccak256(bytes(provider.metadataURI)),\n                block.timestamp\n            )\n        );\n        if (_handshakes[handshakeId].status != HandshakeStatus.None) revert InvalidStatus();\n\n        _escrowFrom(msg.sender, escrowAmount);\n\n        Handshake storage handshake = _handshakes[handshakeId];\n        handshake.status = HandshakeStatus.Open;\n        handshake.userWallet = msg.sender;\n        handshake.providerOperator = providerOperator;\n        handshake.providerOfferId = offerId;\n        handshake.userSessionSigner = userSessionSigner;\n        handshake.handshakeCredentialHash = handshakeCredentialHash;\n        handshake.escrowAmount = escrowAmount;\n\n        emit HandshakeOpened(\n            handshakeId,\n            msg.sender,\n            providerOperator,\n            userSessionSigner,\n            handshakeCredentialHash,\n            offerId,\n            provider.metadataHash,\n            escrowAmount\n        );\n        emit HandshakeOpenedForOffer(handshakeId, offerId, provider.metadataHash);\n    }\n\n    function providerSettleWithUserSettlement(\n        UserDTokenSettlement calldata settlement,\n        bytes calldata userSignature,\n        ProviderUpdate calldata refreshUpdate\n    ) external {\n        Handshake storage handshake = _openHandshakeForProvider(settlement.handshakeId);\n        bytes32 settlementHash = _verifyUserSettlement(handshake, settlement, userSignature);\n        _settle(settlement.handshakeId, handshake, settlement.cumulativeSpent, settlementHash);\n        _refreshProviderAnnouncementIfEarned(handshake, refreshUpdate, settlement.cumulativeSpent);\n    }\n\n    function providerClaimUserBreakup(bytes32 handshakeId, ProviderUpdate calldata refreshUpdate) external {\n        Handshake storage handshake = _handshakes[handshakeId];\n        if (handshake.status != HandshakeStatus.UserBreakupPending) revert InvalidStatus();\n        _requireProviderActor(handshake);\n        _settle(\n            handshakeId,\n            handshake,\n            handshake.pendingCloseAmount,\n            handshake.pendingSettlementProofHash\n        );\n        _refreshProviderAnnouncementIfEarned(handshake, refreshUpdate, handshake.pendingCloseAmount);\n    }\n\n    function requestUserBreakupWithUserSettlement(\n        UserDTokenSettlement calldata settlement,\n        bytes calldata userSignature\n    ) external {\n        Handshake storage handshake = _openHandshakeForId(settlement.handshakeId);\n        if (msg.sender != handshake.userWallet) revert Unauthorized();\n        bytes32 settlementHash = _verifyUserSettlement(handshake, settlement, userSignature);\n        _startUserBreakup(\n            settlement.handshakeId,\n            handshake,\n            settlementHash,\n            settlement.cumulativeSpent\n        );\n    }\n\n    function challengeUserBreakupWithUserSettlement(\n        UserDTokenSettlement calldata settlement,\n        bytes calldata userSignature,\n        ProviderUpdate calldata refreshUpdate\n    ) external {\n        Handshake storage handshake = _handshakes[settlement.handshakeId];\n        if (handshake.status != HandshakeStatus.UserBreakupPending) revert InvalidStatus();\n        _requireProviderActor(handshake);\n        if (block.timestamp >= handshake.challengeDeadline) revert ChallengeExpired();\n\n        bytes32 settlementHash = _verifyUserSettlement(handshake, settlement, userSignature);\n        if (settlement.cumulativeSpent <= handshake.pendingCloseAmount) revert NonMonotonicSpend();\n\n        emit UserBreakupChallenged(settlement.handshakeId, settlement.cumulativeSpent, settlementHash);\n        _settle(settlement.handshakeId, handshake, settlement.cumulativeSpent, settlementHash);\n        _refreshProviderAnnouncementIfEarned(handshake, refreshUpdate, settlement.cumulativeSpent);\n    }\n\n    function finalizeUserBreakup(bytes32 handshakeId) external {\n        Handshake storage handshake = _handshakes[handshakeId];\n        if (handshake.status != HandshakeStatus.UserBreakupPending) revert InvalidStatus();\n        if (msg.sender != handshake.userWallet && msg.sender != handshake.userSessionSigner) revert Unauthorized();\n        if (block.timestamp < handshake.challengeDeadline) revert ChallengeStillActive();\n        _settle(\n            handshakeId,\n            handshake,\n            handshake.pendingCloseAmount,\n            handshake.pendingSettlementProofHash\n        );\n    }\n\n    function providerFinalizeUserBreakup(bytes32 handshakeId, ProviderUpdate calldata refreshUpdate) external {\n        Handshake storage handshake = _handshakes[handshakeId];\n        if (handshake.status != HandshakeStatus.UserBreakupPending) revert InvalidStatus();\n        _requireProviderActor(handshake);\n        if (block.timestamp < handshake.challengeDeadline) revert ChallengeStillActive();\n        _settle(\n            handshakeId,\n            handshake,\n            handshake.pendingCloseAmount,\n            handshake.pendingSettlementProofHash\n        );\n        _refreshProviderAnnouncementIfEarned(handshake, refreshUpdate, handshake.pendingCloseAmount);\n    }\n\n    function offerIdFor(address providerOperator, bytes32 metadataHash) public pure returns (bytes32) {\n        return keccak256(abi.encodePacked(providerOperator, metadataHash));\n    }\n\n    function getHandshake(bytes32 handshakeId) external view returns (Handshake memory) {\n        return _handshakes[handshakeId];\n    }\n\n    function userSettlementStructHash(UserDTokenSettlement calldata settlement) public pure returns (bytes32) {\n        return keccak256(\n            abi.encode(\n                USER_DTOKEN_SETTLEMENT_TYPEHASH,\n                settlement.handshakeId,\n                settlement.cumulativeSpent,\n                settlement.meteringHash,\n                settlement.signedAt\n            )\n        );\n    }\n\n    function userSettlementDigest(UserDTokenSettlement calldata settlement) public view returns (bytes32) {\n        return _hashTypedData(userSettlementStructHash(settlement));\n    }\n\n    function verifyUserSettlement(UserDTokenSettlement calldata settlement, bytes calldata signature)\n        external\n        view\n        returns (bool)\n    {\n        Handshake storage handshake = _handshakes[settlement.handshakeId];\n        if (handshake.status == HandshakeStatus.None) return false;\n        address signer = _recover(userSettlementDigest(settlement), signature);\n        return signer == handshake.userSessionSigner || signer == handshake.userWallet;\n    }\n\n    function _verifyUserSettlement(\n        Handshake storage handshake,\n        UserDTokenSettlement calldata settlement,\n        bytes calldata userSignature\n    ) internal view returns (bytes32 settlementHash) {\n        settlementHash = userSettlementDigest(settlement);\n        address signer = _recover(settlementHash, userSignature);\n        if (signer != handshake.userSessionSigner && signer != handshake.userWallet) revert Unauthorized();\n        _validateSettlementAgainstHandshake(handshake, settlement);\n    }\n\n    function _validateSettlementAgainstHandshake(\n        Handshake storage handshake,\n        UserDTokenSettlement calldata settlement\n    ) internal view {\n        if (settlement.handshakeId == bytes32(0)) revert HandshakeNotFound();\n        if (settlement.meteringHash == bytes32(0)) revert InvalidMeteringHash();\n        if (settlement.cumulativeSpent > handshake.escrowAmount) revert BudgetExceeded();\n        if (settlement.signedAt > block.timestamp + maxSettlementFutureDriftSeconds) revert SettlementFromFuture();\n    }\n\n    function _startUserBreakup(\n        bytes32 handshakeId,\n        Handshake storage handshake,\n        bytes32 settlementHash,\n        uint256 pendingCloseAmount\n    ) internal {\n        if (pendingCloseAmount > handshake.escrowAmount) revert BudgetExceeded();\n        handshake.status = HandshakeStatus.UserBreakupPending;\n        handshake.pendingSettlementProofHash = settlementHash;\n        handshake.pendingCloseAmount = pendingCloseAmount;\n        handshake.challengeDeadline = uint64(block.timestamp) + FIXED_CHALLENGE_PERIOD_SECONDS;\n        emit UserBreakupRequested(\n            handshakeId,\n            pendingCloseAmount,\n            settlementHash,\n            handshake.challengeDeadline\n        );\n    }\n\n    function _settle(\n        bytes32 handshakeId,\n        Handshake storage handshake,\n        uint256 providerAmount,\n        bytes32 settlementProofHash\n    ) internal {\n        if (providerAmount > handshake.escrowAmount) revert BudgetExceeded();\n        uint256 userRefund = handshake.escrowAmount - providerAmount;\n        handshake.status = HandshakeStatus.Settled;\n        _releaseEscrow(handshake.providerOperator, providerAmount);\n        _releaseEscrow(handshake.userWallet, userRefund);\n        emit HandshakeSettled(handshakeId, providerAmount, userRefund, settlementProofHash);\n    }\n\n    function _refreshProviderAnnouncementIfEarned(\n        Handshake storage handshake,\n        ProviderUpdate calldata update,\n        uint256 providerAmount\n    ) internal {\n        if (providerAmount == 0) return;\n        _validateProviderUpdate(update);\n        if (offerIdFor(handshake.providerOperator, update.metadataHash) != handshake.providerOfferId) {\n            revert InvalidSignature();\n        }\n        emit ProviderAnnounced(\n            handshake.providerOperator,\n            handshake.providerOfferId,\n            update.metadataHash,\n            update.metadataURI,\n            uint64(block.number)\n        );\n    }\n\n    function _openHandshakeForProvider(bytes32 handshakeId) internal view returns (Handshake storage handshake) {\n        handshake = _openHandshakeForId(handshakeId);\n        _requireProviderActor(handshake);\n    }\n\n    function _openHandshakeForId(bytes32 handshakeId) internal view returns (Handshake storage handshake) {\n        handshake = _handshakes[handshakeId];\n        if (handshake.status == HandshakeStatus.None) revert HandshakeNotFound();\n        if (handshake.status != HandshakeStatus.Open) revert HandshakeNotOpen();\n    }\n\n    function _requireProviderActor(Handshake storage handshake) internal view {\n        if (!_isProviderActor(handshake, msg.sender)) {\n            revert Unauthorized();\n        }\n    }\n\n    function _requireHandshakeActor(Handshake storage handshake) internal view {\n        if (\n            msg.sender != handshake.userWallet\n                && msg.sender != handshake.userSessionSigner\n                && !_isProviderActor(handshake, msg.sender)\n        ) {\n            revert Unauthorized();\n        }\n    }\n\n    function _isProviderActor(Handshake storage handshake, address actor) internal view returns (bool) {\n        return actor == handshake.providerOperator;\n    }\n\n    function _escrowFrom(address from, uint256 amount) internal {\n        if (amount == 0) revert InvalidAmount();\n        _callToken(\n            abi.encodeWithSelector(IERC20.transferFrom.selector, from, address(this), amount)\n        );\n        escrowedSupply += amount;\n    }\n\n    function _releaseEscrow(address to, uint256 amount) internal {\n        if (amount == 0) return;\n        if (to == address(0)) revert ZeroAddress();\n        if (escrowedSupply < amount) revert InvalidAmount();\n        escrowedSupply -= amount;\n        _callToken(abi.encodeWithSelector(IERC20.transfer.selector, to, amount));\n    }\n\n    function _callToken(bytes memory callData) internal {\n        (bool ok, bytes memory ret) = address(dToken).call(callData);\n        if (!ok || (ret.length != 0 && !abi.decode(ret, (bool)))) revert TokenTransferFailed();\n    }\n\n    function _hashTypedData(bytes32 structHash) internal view returns (bytes32) {\n        return keccak256(abi.encodePacked(\"\\x19\\x01\", domainSeparator(), structHash));\n    }\n\n    function _recover(bytes32 digest, bytes calldata signature) internal pure returns (address) {\n        if (signature.length != 65) revert InvalidSignature();\n\n        bytes32 r;\n        bytes32 s;\n        uint8 v;\n        assembly {\n            r := calldataload(signature.offset)\n            s := calldataload(add(signature.offset, 32))\n            v := byte(0, calldataload(add(signature.offset, 64)))\n        }\n\n        if (uint256(s) > _SECP256K1_HALF_ORDER) revert InvalidSignature();\n        if (v != 27 && v != 28) revert InvalidSignature();\n\n        address recovered = ecrecover(digest, v, r, s);\n        if (recovered == address(0)) revert InvalidSignature();\n        return recovered;\n    }\n\n    function _getImplementation() internal view returns (address implementation) {\n        bytes32 slot = _IMPLEMENTATION_SLOT;\n        assembly {\n            implementation := sload(slot)\n        }\n    }\n\n    function _upgradeToAndCall(address newImplementation, bytes memory data) internal {\n        if (newImplementation == address(this) || newImplementation.code.length == 0) revert InvalidImplementation();\n        (bool ok, bytes memory ret) =\n            newImplementation.staticcall(abi.encodeWithSignature(\"proxiableUUID()\"));\n        if (!ok || ret.length != 32 || abi.decode(ret, (bytes32)) != _IMPLEMENTATION_SLOT) {\n            revert InvalidImplementation();\n        }\n        bytes32 slot = _IMPLEMENTATION_SLOT;\n        assembly {\n            sstore(slot, newImplementation)\n        }\n        emit Upgraded(newImplementation);\n        if (data.length > 0) {\n            (bool success,) = newImplementation.delegatecall(data);\n            if (!success) revert UpgradeCallFailed();\n        }\n    }\n}\n"
+      },
+      "DTokenProxy.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.24;\n\n/// @title dToken ERC1967 Proxy\n/// @notice Minimal proxy for the current dToken upgradeable protocol. Upgrades are authorized by the implementation contract.\ncontract DTokenProxy {\n    bytes32 private constant _IMPLEMENTATION_SLOT =\n        0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;\n\n    event Upgraded(address indexed implementation);\n\n    error InvalidImplementation();\n    error InitializationFailed();\n\n    constructor(address initialImplementation, bytes memory initializationData) payable {\n        if (initialImplementation.code.length == 0) revert InvalidImplementation();\n        bytes32 slot = _IMPLEMENTATION_SLOT;\n        assembly {\n            sstore(slot, initialImplementation)\n        }\n        emit Upgraded(initialImplementation);\n\n        if (initializationData.length > 0) {\n            (bool ok,) = initialImplementation.delegatecall(initializationData);\n            if (!ok) revert InitializationFailed();\n        }\n    }\n\n    fallback() external payable {\n        _fallback();\n    }\n\n    receive() external payable {\n        _fallback();\n    }\n\n    function implementation() external view returns (address impl) {\n        bytes32 slot = _IMPLEMENTATION_SLOT;\n        assembly {\n            impl := sload(slot)\n        }\n    }\n\n    function _fallback() internal {\n        address impl;\n        bytes32 slot = _IMPLEMENTATION_SLOT;\n        assembly {\n            impl := sload(slot)\n        }\n        if (impl == address(0)) revert InvalidImplementation();\n\n        assembly {\n            calldatacopy(0, 0, calldatasize())\n            let result := delegatecall(gas(), impl, 0, calldatasize(), 0, 0)\n            returndatacopy(0, 0, returndatasize())\n            switch result\n            case 0 {\n                revert(0, returndatasize())\n            }\n            default {\n                return(0, returndatasize())\n            }\n        }\n    }\n}\n"
+      }
+    },
+    "settings": {
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "viaIR": true,
+      "outputSelection": {
+        "*": {
+          "*": [
+            "abi",
+            "evm.bytecode.object",
+            "evm.deployedBytecode.object",
+            "metadata"
+          ]
+        }
+      }
+    }
+  },
+  "deployed_at": "2026-05-14T19:14:58.947241+00:00"
+}

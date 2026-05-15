@@ -1,0 +1,15 @@
+{
+  "name": "dtoken-user-mainnet",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "npm run dtoken:user",
+    "dtoken:user": "node apps/dtoken-agent-gateway/src/server.js",
+    "agent:gateway": "node apps/dtoken-agent-gateway/src/server.js",
+    "user:serve": "node apps/dtoken-agent-gateway/src/server.js"
+  },
+  "dependencies": {
+    "ethers": "^6.16.0"
+  }
+}

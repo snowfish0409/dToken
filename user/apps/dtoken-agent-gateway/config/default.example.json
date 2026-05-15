@@ -1,0 +1,19 @@
+{
+  "host": "127.0.0.1",
+  "port": 8789,
+  "publicBaseUrl": "http://127.0.0.1:8789",
+  "profilePath": "apps/dtoken-agent-gateway/data/agent-profile.json",
+  "dataPath": "apps/dtoken-agent-gateway/data",
+  "gateway": {
+    "phase": "phase2-format-bridge",
+    "allowProfileInstall": true,
+    "exposeDTokenMetadata": false,
+    "defaultBudgetLimitDToken": null,
+    "minRoundReserveDToken": "1"
+  },
+  "compatibility": {
+    "openaiChatCompletions": true,
+    "openaiResponses": true,
+    "anthropicMessages": true
+  }
+}

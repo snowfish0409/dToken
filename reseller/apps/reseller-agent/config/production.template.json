@@ -1,0 +1,112 @@
+{
+  "port": 8788,
+  "publicBaseUrl": "https://your-reseller.example/v1",
+  "provider": {
+    "name": "dToken Multi-Model Relay",
+    "wallet": "0x0000000000000000000000000000000000000000",
+    "identities": [],
+    "serviceSigner": "${DTOKEN_SERVICE_SIGNER_KEY}",
+    "serviceSignerAddress": "0x0000000000000000000000000000000000000000",
+    "minEscrowAmount": "50000",
+    "minProviderAutoSettleAmount": "1"
+  },
+  "contract": {
+    "network": "mainnet",
+    "rpcUrl": "${DTOKEN_CONTRACT_RPC}",
+    "contractAddress": "0xc706bd1f6F1457A8953241aF64F93bd5406d751B",
+    "protocolAddress": "0xc706bd1f6F1457A8953241aF64F93bd5406d751B",
+    "tokenAddress": "0x28219c4417d6095C66a04940D84cba13075b768b",
+    "chainId": 1,
+    "providerPrivateKey": "${DTOKEN_PROVIDER_PRIVATE_KEY}"
+  },
+  "upstreams": [
+    {
+      "id": "deepseek",
+      "company": "deepseek",
+      "apiKey": "${DTOKEN_UPSTREAM_DEEPSEEK_KEY}",
+      "optional": true,
+      "timeoutMs": 90000
+    },
+    {
+      "id": "kimi",
+      "company": "kimi",
+      "apiKey": "${DTOKEN_UPSTREAM_KIMI_KEY}",
+      "optional": true,
+      "timeoutMs": 90000
+    },
+    {
+      "id": "gemini",
+      "company": "gemini",
+      "apiKey": "${DTOKEN_UPSTREAM_GEMINI_KEY}",
+      "optional": true,
+      "timeoutMs": 90000
+    },
+    {
+      "id": "openai-responses",
+      "company": "openai",
+      "apiFlavor": "responses",
+      "apiKey": "${DTOKEN_UPSTREAM_OPENAI_KEY}",
+      "optional": true,
+      "timeoutMs": 90000
+    },
+    {
+      "id": "anthropic",
+      "company": "anthropic",
+      "apiKey": "${DTOKEN_UPSTREAM_ANTHROPIC_KEY}",
+      "optional": true,
+      "timeoutMs": 90000
+    },
+    {
+      "id": "qwen",
+      "company": "qwen",
+      "type": "qwen_coding_plan",
+      "baseUrl": "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
+      "healthModel": "qwen3.6-plus",
+      "apiKey": "${DTOKEN_UPSTREAM_QWEN_KEY}",
+      "optional": true,
+      "timeoutMs": 90000
+    },
+    {
+      "id": "xai",
+      "company": "grok",
+      "apiKey": "${DTOKEN_UPSTREAM_XAI_KEY}",
+      "optional": true,
+      "timeoutMs": 90000
+    },
+    {
+      "id": "glm",
+      "company": "glm",
+      "apiKey": "${DTOKEN_UPSTREAM_GLM_KEY}",
+      "optional": true,
+      "timeoutMs": 90000
+    },
+    {
+      "id": "mistral",
+      "company": "mistral",
+      "apiKey": "${DTOKEN_UPSTREAM_MISTRAL_KEY}",
+      "optional": true,
+      "timeoutMs": 90000
+    },
+    {
+      "id": "openrouter",
+      "company": "openrouter",
+      "apiKey": "${DTOKEN_UPSTREAM_OPENROUTER_KEY}",
+      "optional": true,
+      "timeoutMs": 90000
+    }
+  ],
+  "modelCatalogs": [
+    "reference-v1"
+  ],
+  "models": [],
+  "accessKeys": [],
+  "ledger": {
+    "storagePath": "./data",
+    "autoSaveIntervalMs": 10000,
+    "saveMessages": false
+  },
+  "logging": {
+    "level": "info",
+    "format": "json"
+  }
+}

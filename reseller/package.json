@@ -1,0 +1,13 @@
+{
+  "name": "dtoken-reseller-mainnet",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "npm run reseller:serve",
+    "reseller:serve": "node apps/reseller-agent/src/server.js"
+  },
+  "dependencies": {
+    "ethers": "^6.16.0"
+  }
+}
