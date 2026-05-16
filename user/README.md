@@ -28,6 +28,18 @@ Agent endpoints:
 - OpenAI-compatible: `http://127.0.0.1:8789/v1`
 - Anthropic-compatible: `http://127.0.0.1:8789/anthropic`
 
+## Escrow Amount Units
+
+When creating a handshake, the escrow field supports a unit selector:
+
+- `1` = dToken
+- `K` = thousand dToken
+- `M` = million dToken
+- `B` = billion dToken
+- `T` = trillion dToken
+
+For example, entering `100` with unit `B` means `100B dToken`.
+
 ## Claude Code Compatibility
 
 The Anthropic-compatible endpoint can be used by Claude Code and other
@@ -95,6 +107,18 @@ Agent 接入地址：
 
 - OpenAI-compatible：`http://127.0.0.1:8789/v1`
 - Anthropic-compatible：`http://127.0.0.1:8789/anthropic`
+
+## 托管金额单位
+
+创建牵手时，托管输入框支持单位选择：
+
+- `1` = dToken
+- `K` = 千 dToken
+- `M` = 百万 dToken
+- `B` = 十亿 dToken
+- `T` = 万亿 dToken
+
+例如输入 `100` 并选择 `B`，表示 `100B dToken`。
 
 ## Claude Code 兼容
 

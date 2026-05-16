@@ -826,7 +826,8 @@ function replayBufferedAnthropicStream(response, { frames, finalPayload, include
     index++;
   }
 
-  if (collected.text) {
+  const textForClient = collected.text || (!emitThinking ? collected.reasoning : "");
+  if (textForClient) {
     writeSse(response, "content_block_start", {
       type: "content_block_start",
       index,
@@ -835,7 +836,7 @@ function replayBufferedAnthropicStream(response, { frames, finalPayload, include
     writeSse(response, "content_block_delta", {
       type: "content_block_delta",
       index,
-      delta: { type: "text_delta", text: collected.text },
+      delta: { type: "text_delta", text: textForClient },
     });
     writeSse(response, "content_block_stop", { type: "content_block_stop", index });
     index++;
@@ -1006,7 +1007,8 @@ function finalizeLiveAnthropicStream(state, { frames, finalPayload }) {
     state.index++;
   }
 
-  if (!state.textStarted && collected.text) {
+  const textForClient = collected.text || (!state.emitThinking ? (collected.reasoning || state.reasoning) : "");
+  if (!state.textStarted && textForClient) {
     writeSse(state.response, "content_block_start", {
       type: "content_block_start",
       index: state.index,
@@ -1015,7 +1017,7 @@ function finalizeLiveAnthropicStream(state, { frames, finalPayload }) {
     writeSse(state.response, "content_block_delta", {
       type: "content_block_delta",
       index: state.index,
-      delta: { type: "text_delta", text: collected.text },
+      delta: { type: "text_delta", text: textForClient },
     });
     writeSse(state.response, "content_block_stop", { type: "content_block_stop", index: state.index });
     state.index++;

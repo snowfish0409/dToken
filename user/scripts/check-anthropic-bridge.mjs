@@ -80,6 +80,31 @@ const qwenAnthropicResponse = shapeClientResponse({
 assert.equal(qwenAnthropicResponse.content.some((part) => part.type === "thinking"), false);
 assert.deepEqual(qwenAnthropicResponse.content, [{ type: "text", text: "visible answer" }]);
 
+const qwenReasoningOnlyResponse = shapeClientResponse({
+  clientFormat: CLIENT_FORMATS.ANTHROPIC_MESSAGES,
+  profile: qwenProfile,
+  exposeDTokenMetadata: false,
+  ackMeta,
+  payload: {
+    id: "chatcmpl_qwen_reasoning_only",
+    model: "qwen3.6-plus",
+    choices: [
+      {
+        finish_reason: "stop",
+        message: {
+          content: "",
+          reasoning_content: "fallback answer from upstream reasoning",
+        },
+      },
+    ],
+    usage: { prompt_tokens: 1, completion_tokens: 2 },
+  },
+});
+
+assert.deepEqual(qwenReasoningOnlyResponse.content, [
+  { type: "text", text: "fallback answer from upstream reasoning" },
+]);
+
 const anthropicResponse = shapeClientResponse({
   clientFormat: CLIENT_FORMATS.ANTHROPIC_MESSAGES,
   profile: anthropicProfile,
@@ -115,4 +140,3 @@ const rendered = renderMessagesForProvider([
 assert.equal(rendered.messages[0].content.some((part) => part.type === "thinking"), false);
 
 console.log("Anthropic bridge compatibility checks passed");
-

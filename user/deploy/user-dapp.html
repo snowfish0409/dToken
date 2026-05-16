@@ -105,6 +105,10 @@ button,input,select,textarea{font-family:var(--font-ui);letter-spacing:0}
 .price-box .price-line{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .price-box .price-muted{font-size:9px;color:var(--text3)}
 .price-mini{font-size:9px;color:var(--text2);line-height:13px;margin-top:2px}
+.amount-unit-row{display:grid;grid-template-columns:minmax(0,1fr) 78px;gap:4px;margin-top:7px}
+.amount-unit-row input,.amount-unit-row select{margin-top:0}
+.amount-unit-row select{padding-left:8px;padding-right:8px;font-family:var(--font-mono);font-weight:700;text-align:center}
+.amount-unit-hint{min-height:14px;margin-top:3px;font-size:9px;line-height:14px;color:var(--text3);font-family:var(--font-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .local-data-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:5px}
 .local-data-actions .btn{margin-top:0;padding-left:6px;padding-right:6px;font-size:10px}
 
@@ -420,7 +424,17 @@ select{cursor:pointer}
       <div id="selProv" class="hidden" style="margin:4px 0;padding:6px 8px;background:var(--accent-bg);border-radius:6px;font-size:11px">
         &#x2705; <span data-i18n="selected">已选择</span>: <span id="selProvName" class="mono"></span>
       </div>
-      <input type="number" id="escrowAmt" value="50000" min="1" step="any" data-i18n-placeholder="escrowPh" placeholder="托管 dToken">
+      <div class="amount-unit-row">
+        <input type="number" id="escrowAmt" value="50000" min="1" step="any" data-i18n-placeholder="escrowAmountPh" placeholder="输入数量" oninput="onEscrowAmountInput()">
+        <select id="escrowUnit" data-prev-unit="1" onchange="onEscrowUnitChange()">
+          <option value="1">1</option>
+          <option value="1000">K</option>
+          <option value="1000000">M</option>
+          <option value="1000000000">B</option>
+          <option value="1000000000000">T</option>
+        </select>
+      </div>
+      <div class="amount-unit-hint" id="escrowUnitHint"></div>
       <div class="price-box" id="createPriceBox">
         <div class="price-line"><span data-i18n="selectedModelPrice">模型报价估算</span><strong id="selectedModelPrice">—</strong></div>
         <div class="price-muted" id="selectedEscrowUsd">—</div>
@@ -604,7 +618,7 @@ const I18N={
     localData:'本地数据',exportFullBackup:'导出完整迁移',importFullBackup:'导入完整迁移',fullBackupHint:'包含聊天、任务、牵手、本地签名密钥和 API Key。',fullBackupWarning:'完整迁移文件会包含 API Key、本地会话私钥、牵手凭证和聊天记录。导入会覆盖当前本地 User 状态。确认继续？',fullBackupExported:'完整迁移 JSON 已导出',fullBackupImported:'完整迁移数据已导入，页面将刷新',fullBackupExportFailed:'导出失败: {msg}',fullBackupImportFailed:'导入失败: {msg}',fullBackupInvalid:'不是有效的 dToken 完整迁移 JSON',
     onchainHandshakes:'链上牵手',syncChain:'同步链上',syncTitle:'从链上同步最新状态',localArchiveAfterConnect:'连接钱包后显示本地存档',createHandshake:'创建新牵手',
     expandProviderMarket:'展开 Provider 市场',collapse:'收起',scanProvider:'扫描链上 Provider',providerSearchPh:'输入 Provider 地址或模型名...',read:'读取',selected:'已选择',
-    escrowPh:'托管 dToken',openHandshake:'发起牵手 · 钱包签名',ended:'已结束',endedCalls:'已结束调用',expandDetails:'展开详情',collapseDetails:'收起详情',workspace:'工作区',renameCurrentTask:'重命名当前任务',newTask:'新建任务',
+    escrowPh:'托管 dToken',escrowAmountPh:'输入数量',escrowUnitPreview:'= {amount}',escrowUnitMin:'最低 {amount}',openHandshake:'发起牵手 · 钱包签名',ended:'已结束',endedCalls:'已结束调用',expandDetails:'展开详情',collapseDetails:'收起详情',workspace:'工作区',renameCurrentTask:'重命名当前任务',newTask:'新建任务',
     newThread:'新建线程',newThreadInTask:'在当前任务中新建线程',newIndependentThread:'新建线程',newIndependentThreadTitle:'新建线程',searchThreadsPh:'搜索线程标题和消息内容...',model:'模型',spent:'消费',context:'上下文',
     noContext:'不附带',custom:'自定义',all:'全部',roundUnit:'轮',rounds5:'5 轮',rounds10:'10 轮',rounds20:'20 轮',emptyTitle:'dToken LLM 服务',
     emptySub:'在左侧面板创建牵手并获取 API Key<br>新建线程 → 绑定模型 → 开始对话',bindModelPh:'绑定模型后可输入消息...',send:'发送',
@@ -684,7 +698,7 @@ const I18N={
     localData:'Local data',exportFullBackup:'Export migration',importFullBackup:'Import migration',fullBackupHint:'Includes chats, tasks, handshakes, local signer keys, and API keys.',fullBackupWarning:'The migration file contains API keys, local session private keys, handshake credentials, and chat history. Importing overwrites the current local User state. Continue?',fullBackupExported:'Full migration JSON exported',fullBackupImported:'Migration imported; reloading page',fullBackupExportFailed:'Export failed: {msg}',fullBackupImportFailed:'Import failed: {msg}',fullBackupInvalid:'Not a valid dToken full migration JSON',
     onchainHandshakes:'On-chain handshakes',syncChain:'Sync chain',syncTitle:'Sync latest on-chain state',localArchiveAfterConnect:'Local archive appears after wallet connection',createHandshake:'Create handshake',
     expandProviderMarket:'Expand Provider market',collapse:'Collapse',scanProvider:'Scan on-chain Providers',providerSearchPh:'Enter Provider address or model name...',read:'Read',selected:'Selected',
-    escrowPh:'Escrow dToken',openHandshake:'Open handshake · wallet signature',ended:'Ended',endedCalls:'Ended calls',expandDetails:'Details',collapseDetails:'Details',workspace:'Workspace',renameCurrentTask:'Rename current task',newTask:'New task',
+    escrowPh:'Escrow dToken',escrowAmountPh:'Amount',escrowUnitPreview:'= {amount}',escrowUnitMin:'minimum {amount}',openHandshake:'Open handshake · wallet signature',ended:'Ended',endedCalls:'Ended calls',expandDetails:'Details',collapseDetails:'Details',workspace:'Workspace',renameCurrentTask:'Rename current task',newTask:'New task',
     newThread:'New thread',newThreadInTask:'Create a thread in current task',newIndependentThread:'New thread',newIndependentThreadTitle:'Create a thread',searchThreadsPh:'Search thread titles and messages...',model:'Model',spent:'Spent',context:'Context',
     noContext:'None',custom:'Custom',all:'All',roundUnit:'rounds',rounds5:'5 rounds',rounds10:'10 rounds',rounds20:'20 rounds',emptyTitle:'dToken LLM Service',
     emptySub:'Create a handshake and get an API Key in the left panel<br>New thread → bind model → start chatting',bindModelPh:'Bind a model to type...',send:'Send',
@@ -810,10 +824,92 @@ function fmtDToken(v){
   }catch{return String(v)}
 }
 const DU=v=>{try{return fmtDToken(v)+' dToken'}catch{return String(v)+' dToken'}};
-function parseDTokenInput(v){
+const DTOKEN_INPUT_UNITS=[
+  {value:'1',label:'1',decimals:0},
+  {value:'1000',label:'K',decimals:3},
+  {value:'1000000',label:'M',decimals:6},
+  {value:'1000000000',label:'B',decimals:9},
+  {value:'1000000000000',label:'T',decimals:12}
+];
+function dtokenInputUnitValue(unit){
+  const u=DTOKEN_INPUT_UNITS.find(x=>x.value===String(unit));
+  return u?BigInt(u.value):1n;
+}
+function dtokenInputUnitDecimals(unit){
+  const u=DTOKEN_INPUT_UNITS.find(x=>x.value===String(unit));
+  return u?u.decimals:0;
+}
+function selectedEscrowUnit(){
+  const sel=E('escrowUnit');
+  return sel?sel.value:'1';
+}
+function setEscrowUnit(unit){
+  const sel=E('escrowUnit');if(!sel)return;
+  const value=DTOKEN_INPUT_UNITS.some(x=>x.value===String(unit))?String(unit):'1';
+  sel.value=value;
+  sel.dataset.prevUnit=value;
+}
+function bestDTokenInputUnitForRaw(raw){
+  raw=BigInt(raw||0);
+  if(raw<=0n)return'1';
+  const base=dtokenUnit();
+  for(const u of [...DTOKEN_INPUT_UNITS].reverse()){
+    const factor=base*BigInt(u.value);
+    if(raw>=factor)return u.value;
+  }
+  return'1';
+}
+function trimDecimalText(text){
+  return String(text||'0').replace(/(\.\d*?)0+$/,'$1').replace(/\.$/,'')||'0';
+}
+function formatDTokenInputForUnit(raw,unit='1'){
+  try{return trimDecimalText(ethers.formatUnits(BigInt(raw||0),DTOKEN_DECIMALS+dtokenInputUnitDecimals(unit)))}catch{return'0'}
+}
+function parseDTokenInput(v,unit='1'){
   const text=String(v??'').trim();
   if(!/^(?:\d+|\d+\.\d{0,18}|\.\d{1,18})$/.test(text))throw new Error('invalid dToken amount');
-  return ethers.parseUnits(text,DTOKEN_DECIMALS);
+  return ethers.parseUnits(text,DTOKEN_DECIMALS)*dtokenInputUnitValue(unit);
+}
+function parseEscrowInput(){
+  return parseDTokenInput(E('escrowAmt')?.value||'',selectedEscrowUnit());
+}
+function selectedProviderForCreate(){
+  return selProvKey?allProvs.find(x=>x.key===selProvKey):null;
+}
+function syncEscrowMinForUnit({raiseToMin=false}={}){
+  const input=E('escrowAmt');if(!input)return;
+  const p=selectedProviderForCreate();
+  const unit=selectedEscrowUnit();
+  const min=BigInt(p?.minEscrowAmount||0);
+  input.min=min>0n?formatDTokenInputForUnit(min,unit):'1';
+  if(raiseToMin&&min>0n){
+    let current=0n;try{current=parseEscrowInput()}catch{}
+    if(current<min)input.value=formatDTokenInputForUnit(min,unit);
+  }
+}
+function renderEscrowUnitHint(){
+  const hint=E('escrowUnitHint');if(!hint)return;
+  const parts=[];
+  let raw=0n,valid=false;
+  try{raw=parseEscrowInput();valid=raw>0n}catch{}
+  if(valid)parts.push(L('escrowUnitPreview',{amount:DU(raw)}));
+  const p=selectedProviderForCreate();
+  const min=BigInt(p?.minEscrowAmount||0);
+  if(min>0n)parts.push(L('escrowUnitMin',{amount:DU(min)}));
+  hint.textContent=parts.join(' · ');
+}
+function onEscrowAmountInput(){
+  syncEscrowMinForUnit();
+  renderSelectedProviderPrice();
+}
+function onEscrowUnitChange(){
+  const sel=E('escrowUnit'),input=E('escrowAmt');if(!sel||!input)return;
+  const prev=sel.dataset.prevUnit||'1';
+  let raw=null;try{raw=parseDTokenInput(input.value||'0',prev)}catch{}
+  sel.dataset.prevUnit=sel.value;
+  if(raw!==null&&raw>0n)input.value=formatDTokenInputForUnit(raw,sel.value);
+  syncEscrowMinForUnit({raiseToMin:true});
+  renderSelectedProviderPrice();
 }
 function fmtBytes(v){let n=Number(v||0);if(!Number.isFinite(n)||n<=0)return'0 B';const u=['B','KB','MB'];let i=0;while(n>=1024&&i<u.length-1){n/=1024;i++}return (n>=100?n.toFixed(0):n>=10?n.toFixed(1):n.toFixed(2))+' '+u[i]}
 const toBI=v=>{try{return BigInt(v||0)}catch{return 0n}};
@@ -871,13 +967,14 @@ function renderSelectedProviderPrice(){
   const priceEl=E('selectedModelPrice'),escrowEl=E('selectedEscrowUsd');
   if(!priceEl||!escrowEl)return;
   const p=selProvKey?allProvs.find(x=>x.key===selProvKey):null;
-  if(!p){priceEl.textContent='—';escrowEl.textContent=dtokenPrice.loaded?L('priceSource'):'—';return}
+  if(!p){priceEl.textContent='—';escrowEl.textContent=dtokenPrice.loaded?L('priceSource'):'—';renderEscrowUnitHint();return}
   const hint=modelUsdHint(p.inputTokenPrice||0,p.outputTokenPrice||0);
   priceEl.textContent=hint||`${PRICE(p.inputTokenPrice||0)} / ${PRICE(p.outputTokenPrice||0)}`;
-  let escrow=0n;try{escrow=parseDTokenInput(E('escrowAmt')?.value||0)}catch{}
+  let escrow=0n;try{escrow=parseEscrowInput()}catch{}
   const eth=ethForDtoken(escrow);
   const usd=usdForDtoken(escrow);
   escrowEl.textContent=dtokenPrice.loaded?L('escrowValue',{eth:ETHV(eth),usd:dtokenPrice.dtokenUsd?USD(usd):L('usdUnavailable')}):L('priceUnavailable');
+  renderEscrowUnitHint();
 }
 const PCT=(a,b)=>{try{a=BigInt(a||0);b=BigInt(b||0);if(b<=0n)return 0;return Number((a*10000n)/b)/100}catch{return 0}};
 function T(m,t='info'){const d=document.createElement('div');d.className=`toast ${t}`;d.textContent=m;E('toasts').appendChild(d);setTimeout(()=>d.remove(),3500)}
@@ -2858,9 +2955,11 @@ function pickProvider(key){
   E('openHsBtn').disabled=!providerActive(p);
   const min=BigInt(p?.minEscrowAmount||0);
   const input=E('escrowAmt');
-  input.min=min>0n?ethers.formatUnits(min,DTOKEN_DECIMALS):'1';
-  let current=0n;try{current=parseDTokenInput(input.value)}catch{}
-  if(min>0n&&current<min)input.value=ethers.formatUnits(min,DTOKEN_DECIMALS).replace(/\.0+$/,'');
+  let current=0n;try{current=parseEscrowInput()}catch{}
+  if(min>0n)setEscrowUnit(bestDTokenInputUnitForRaw(min));
+  syncEscrowMinForUnit();
+  if(min>0n&&current<min)input.value=formatDTokenInputForUnit(min,selectedEscrowUnit());
+  else if(current>0n)input.value=formatDTokenInputForUnit(current,selectedEscrowUnit());
   filterProvs();
   renderSelectedProviderPrice();
 }
@@ -2884,10 +2983,12 @@ function providerUpdateForContract(p){
 // ═══════════ dToken: CREATE HANDSHAKE ═══════════
 async function createHandshake(){
   if(!writeC||!selProvAddr||!selProvModel){T(L('selectProviderFirst'),'err');return}
-  const escrow=E('escrowAmt').value;if(!escrow||Number(escrow)<=0){T(L('enterEscrow'),'err');return}
+  const escrow=E('escrowAmt').value;
+  let escrowRaw=0n;
+  try{escrowRaw=parseEscrowInput()}catch{T(L('escrowInteger'),'err');return}
+  if(!escrow||escrowRaw<=0n){T(L('enterEscrow'),'err');return}
   const btn=E('openHsBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
   try{
-    const escrowRaw=parseDTokenInput(escrow);
     const prov=allProvs.find(p=>p.key===selProvKey)||{};
     const minEscrow=BigInt(prov.minEscrowAmount||0);
 	    if(minEscrow>0n&&escrowRaw<minEscrow){T(L('escrowMin',{amount:DU(minEscrow)}),'err');return}
@@ -4782,7 +4883,9 @@ E('chatInput').addEventListener('compositionstart',()=>composing=true);
 E('chatInput').addEventListener('compositionend',()=>composing=false);
 E('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!composing){e.preventDefault();sendMsg()}});
 E('chatInput').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'});
-if(E('escrowAmt'))E('escrowAmt').addEventListener('input',renderSelectedProviderPrice);
+if(E('escrowUnit')){
+  E('escrowUnit').dataset.prevUnit=E('escrowUnit').value||'1';
+}
 E('chatInput').addEventListener('paste',e=>{
   if(E('chatInput').disabled)return;
   const files=attachmentFilesFromList(e.clipboardData&&e.clipboardData.files);

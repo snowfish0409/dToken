@@ -437,10 +437,11 @@ function shapeAnthropicMessages(payload, ackMeta, exposeDTokenMetadata, { emitTh
       signature: message.reasoning_signature ?? dtokenThinkingSignature(reasoningContent, payload?.id),
     });
   }
+  const textFallback = !emitThinking && !text && !output.parts.length ? reasoningContent : "";
   if (output.parts.length) {
     content.push(...(renderMessagesForProvider([{ role: "assistant", content: output.parts }], { format: "anthropic_messages" }).messages[0]?.content ?? []));
-  } else if (text) {
-    content.push({ type: "text", text });
+  } else if (text || textFallback) {
+    content.push({ type: "text", text: text || textFallback });
   }
   content.push(...toolCalls);
   const out = {
