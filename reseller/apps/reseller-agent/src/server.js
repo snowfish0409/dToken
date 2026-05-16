@@ -30,6 +30,7 @@ export async function createResellerAgent(config = loadConfig()) {
   if (errors.length > 0) {
     console.error("[config] Validation errors:");
     for (const err of errors) console.error(`  - ${err}`);
+    throw new Error("Invalid dToken Provider configuration. Run `npm run config:check` for a detailed preflight report.");
   }
 
   const startTime = Date.now();

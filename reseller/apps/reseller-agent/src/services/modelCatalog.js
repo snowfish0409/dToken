@@ -3,7 +3,7 @@ const PROVIDER_WALLET = "$provider.wallet";
 export const MODEL_CATALOGS = Object.freeze({
   "reference-v1": [
     model("deepseek-v4-pro", "deepseek", "deepseek-v4-pro", "deepseek", "openai_chat_completions", 1048576, ["chat", "reasoning"], 4, 7),
-    model("qwen3.6-plus", "qwen", "qwen3.6-plus", "qwen", "openai_chat_completions", 1048576, ["chat", "vision", "image", "video", "multimodal", "reasoning"], 15, 36),
+    model("qwen3.6-plus", "qwen", "qwen3.6-plus", "qwen", "openai_chat_completions", 1048576, ["chat", "vision", "image", "video", "multimodal", "reasoning"], 1000000, 3000000),
   ],
 });
 

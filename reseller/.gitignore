@@ -1,0 +1,9 @@
+.env
+node_modules/
+data/
+apps/reseller-agent/data/
+config/production.json
+*.log
+*.tgz
+*.DS_Store
+.DS_Store

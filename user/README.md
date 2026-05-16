@@ -28,6 +28,26 @@ Agent endpoints:
 - OpenAI-compatible: `http://127.0.0.1:8789/v1`
 - Anthropic-compatible: `http://127.0.0.1:8789/anthropic`
 
+## Claude Code Compatibility
+
+The Anthropic-compatible endpoint can be used by Claude Code and other
+Anthropic Messages clients. When the selected dToken provider is an
+OpenAI-compatible upstream such as Qwen, the gateway intentionally suppresses
+synthetic Anthropic extended-thinking blocks. This avoids invalid
+`thinking_delta` / `signature_delta` streams like:
+
+```text
+Content block is not a thinking block
+```
+
+Native Anthropic upstreams may still emit real Anthropic thinking blocks.
+
+Run the bridge check before publishing changes:
+
+```bash
+npm run check:anthropic-bridge
+```
+
 ## Mainnet Contracts
 
 - dToken ERC20: `0x28219c4417d6095C66a04940D84cba13075b768b`
@@ -75,6 +95,24 @@ Agent 接入地址：
 
 - OpenAI-compatible：`http://127.0.0.1:8789/v1`
 - Anthropic-compatible：`http://127.0.0.1:8789/anthropic`
+
+## Claude Code 兼容
+
+Anthropic-compatible endpoint 可用于 Claude Code 等 Anthropic Messages
+客户端。当当前 dToken provider 是 Qwen 这类 OpenAI-compatible upstream 时，
+gateway 会主动禁止输出伪造的 Anthropic extended-thinking block，避免产生：
+
+```text
+Content block is not a thinking block
+```
+
+只有真正 Anthropic upstream 才会继续输出原生 thinking block。
+
+发布前可运行：
+
+```bash
+npm run check:anthropic-bridge
+```
 
 ## 主网合约
 

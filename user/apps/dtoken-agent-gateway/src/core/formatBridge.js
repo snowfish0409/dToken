@@ -71,13 +71,15 @@ export function normalizeAgentRequest({ body, clientFormat, profile }) {
   return openAIChatBody(body, profile);
 }
 
-export function shapeClientResponse({ payload, ackMeta, exposeDTokenMetadata, clientFormat }) {
+export function shapeClientResponse({ payload, ackMeta, exposeDTokenMetadata, clientFormat, profile }) {
   const format = normalizeClientFormat(clientFormat);
   if (format === CLIENT_FORMATS.OPENAI_RESPONSES) {
     return shapeOpenAIResponses(payload, ackMeta, exposeDTokenMetadata);
   }
   if (format === CLIENT_FORMATS.ANTHROPIC_MESSAGES) {
-    return shapeAnthropicMessages(payload, ackMeta, exposeDTokenMetadata);
+    return shapeAnthropicMessages(payload, ackMeta, exposeDTokenMetadata, {
+      emitThinking: shouldEmitAnthropicThinking(profile),
+    });
   }
   return shapeOpenAIChat(payload, ackMeta, exposeDTokenMetadata);
 }
@@ -149,9 +151,10 @@ function responsesToChatBody(body = {}, profile) {
 function anthropicToChatBody(body = {}, profile) {
   const messages = [];
   const system = body.system;
+  const preserveThinking = isAnthropicUpstream(profile);
   if (typeof system === "string" && system) messages.push({ role: "system", content: system });
   else if (Array.isArray(system) && system.length) messages.push({ role: "system", content: system });
-  messages.push(...anthropicMessagesToOpenAI(body.messages ?? []));
+  messages.push(...anthropicMessagesToOpenAI(body.messages ?? [], { preserveThinking }));
   const out = {
     requested_model: body.model ?? null,
     model: profile?.dtoken?.model ?? body.model,
@@ -166,18 +169,26 @@ function anthropicToChatBody(body = {}, profile) {
   // Code sends Anthropic metadata that GLM rejects as an invalid API parameter.
   if (body.tools != null) out.tools = anthropicToolsToOpenAI(body.tools);
   if (body.tool_choice != null) out.tool_choice = anthropicToolChoiceToOpenAI(body.tool_choice);
-  if (body.thinking != null && isAnthropicUpstream(profile)) out.thinking = body.thinking;
+  if (body.thinking != null && preserveThinking) out.thinking = body.thinking;
   return out;
 }
 
 function isAnthropicUpstream(profile) {
   const dtoken = profile?.dtoken ?? {};
-  const upstream = normalizeUpstreamFormat(dtoken.upstreamFormat ?? dtoken.messageFormat, dtoken.providerFamily);
-  const family = normalizeToken(dtoken.providerFamily ?? "");
+  const providerFamily = dtoken.providerFamily ?? dtoken.provider_family;
+  const upstream = normalizeUpstreamFormat(
+    dtoken.upstreamFormat ?? dtoken.upstream_format ?? dtoken.messageFormat ?? dtoken.message_format,
+    providerFamily
+  );
+  const family = normalizeToken(providerFamily ?? "");
   return upstream === UPSTREAM_FORMATS.ANTHROPIC_MESSAGES || family === "anthropic" || family === "claude";
 }
 
-function anthropicMessagesToOpenAI(messages = []) {
+export function shouldEmitAnthropicThinking(profile) {
+  return isAnthropicUpstream(profile);
+}
+
+function anthropicMessagesToOpenAI(messages = [], { preserveThinking = true } = {}) {
   const out = [];
   for (const message of messages) {
     const role = String(message?.role ?? "user");
@@ -198,9 +209,12 @@ function anthropicMessagesToOpenAI(messages = []) {
             },
           });
         } else if (part?.type === "thinking" || part?.type === "reasoning" || part?.type === "reasoning_content") {
+          if (!preserveThinking) continue;
           const thinking = part.thinking ?? part.reasoning ?? part.reasoning_content ?? part.text ?? "";
           if (thinking) reasoningParts.push(String(thinking));
           if (!reasoningSignature && part.signature) reasoningSignature = String(part.signature);
+        } else if (part?.type === "redacted_thinking") {
+          continue;
         } else {
           textParts.push(part);
         }
@@ -409,14 +423,14 @@ function responsesOutputContent(parts, text) {
   return content.length ? content : [{ type: "output_text", text }];
 }
 
-function shapeAnthropicMessages(payload, ackMeta, exposeDTokenMetadata) {
+function shapeAnthropicMessages(payload, ackMeta, exposeDTokenMetadata, { emitThinking = true } = {}) {
   const message = payload?.choices?.[0]?.message ?? {};
   const output = normalizeAssistantOutput(message.content_parts ?? message.content ?? "");
   const text = output.text || String(message.content ?? "");
   const toolCalls = openAIToolCallsToAnthropic(message.tool_calls);
   const content = [];
   const reasoningContent = String(message.reasoning_content ?? "");
-  if (reasoningContent) {
+  if (emitThinking && reasoningContent) {
     content.push({
       type: "thinking",
       thinking: reasoningContent,

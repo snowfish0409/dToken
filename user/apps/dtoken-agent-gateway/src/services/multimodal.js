@@ -165,9 +165,10 @@ export function renderMessagesForProvider(messages, options = {}) {
     format = "openai_chat_completions",
     geminiThoughtSignatureResolver = null,
     preserveReasoningContent = false,
+    emitAnthropicThinking = true,
   } = options;
   const canonical = normalizeMessagesToDToken(messages);
-  if (format === "anthropic_messages") return renderAnthropicMessages(canonical);
+  if (format === "anthropic_messages") return renderAnthropicMessages(canonical, { emitThinking: emitAnthropicThinking });
   if (format === "gemini_generate_content") {
     return renderGeminiContents(canonical, { geminiThoughtSignatureResolver });
   }
@@ -474,7 +475,7 @@ function responseToolOutput(content) {
     .filter((part) => part.text || part.image_url || part.audio_url || part.video_url || part.file_url);
 }
 
-function renderAnthropicMessages(messages) {
+function renderAnthropicMessages(messages, { emitThinking = true } = {}) {
   const systemParts = [];
   const converted = [];
   for (const message of normalizeMessagesToDToken(messages)) {
@@ -484,7 +485,7 @@ function renderAnthropicMessages(messages) {
       if (part.type === "file") return renderAnthropicDocument(part);
       return null;
     }).filter(Boolean);
-    if (message.role === "assistant" && message.reasoning_content) {
+    if (emitThinking && message.role === "assistant" && message.reasoning_content) {
       const thinking = { type: "thinking", thinking: message.reasoning_content };
       if (message.reasoning_signature) thinking.signature = message.reasoning_signature;
       content.unshift(thinking);

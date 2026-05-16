@@ -9,6 +9,7 @@ import {
   openAIToolCallsToAnthropic,
   mapAnthropicStopReason,
   dtokenThinkingSignature,
+  shouldEmitAnthropicThinking,
 } from "../core/formatBridge.js";
 
 const rateLimitCooldowns = new Map();
@@ -425,7 +426,7 @@ async function handleNonStreaming({ config, profileStore, profile, ledger, body,
   }
 
   const ackMeta = await acknowledgeAndRecord({ profile, ledger, dtoken: payload.dtoken, mode: "chat.completions" });
-  sendJson(response, 200, shapeAgentResponse(payload, ackMeta, shouldExposeDTokenMetadata(config, request), clientFormat));
+  sendJson(response, 200, shapeAgentResponse(payload, ackMeta, shouldExposeDTokenMetadata(config, request), clientFormat, profile));
 }
 
 async function handleStreaming({ config, profileStore, profile, ledger, body, request, response, clientFormat }) {
@@ -494,7 +495,8 @@ async function handleStreaming({ config, profileStore, profile, ledger, body, re
   const bufferedFrames = [];
   const liveOpenAIChat = clientFormat === CLIENT_FORMATS.OPENAI_CHAT;
   const liveAnthropic = clientFormat === CLIENT_FORMATS.ANTHROPIC_MESSAGES;
-  const anthropicLive = liveAnthropic ? createAnthropicLiveState(response) : null;
+  const emitAnthropicThinking = liveAnthropic && shouldEmitAnthropicThinking(profile);
+  const anthropicLive = liveAnthropic ? createAnthropicLiveState(response, { emitThinking: emitAnthropicThinking }) : null;
 
   try {
     while (true) {
@@ -540,13 +542,19 @@ async function handleStreaming({ config, profileStore, profile, ledger, body, re
       stopStreamingHeartbeat(heartbeat);
       ledger.record({ ok: false, mode: "chat.completions.stream", handshakeId: profile.dtoken.handshakeId, model: profile.dtoken.model, error: providerError?.error?.message || "provider stream error" });
       disableTerminalProfile(profileStore, profile, providerError?.error ?? providerError);
-      writeClientStreamError(response, clientFormat, providerError);
+      const errorBlockIndex = liveAnthropic ? closeLiveAnthropicOpenBlock(anthropicLive) : 0;
+      writeClientStreamError(response, clientFormat, providerError, { index: errorBlockIndex });
     } else {
       const ackMeta = await acknowledgeAndRecord({ profile, ledger, dtoken: finalDToken?.dtoken, mode: "chat.completions.stream" });
       stopStreamingHeartbeat(heartbeat);
       if (clientFormat === CLIENT_FORMATS.ANTHROPIC_MESSAGES) {
         if (liveAnthropic) finalizeLiveAnthropicStream(anthropicLive, { frames: bufferedFrames, finalPayload: finalDToken });
-        else replayBufferedAnthropicStream(response, { frames: bufferedFrames, finalPayload: finalDToken, includeStart: !anthropicStarted });
+        else replayBufferedAnthropicStream(response, {
+          frames: bufferedFrames,
+          finalPayload: finalDToken,
+          includeStart: !anthropicStarted,
+          emitThinking: emitAnthropicThinking,
+        });
         response.end();
         return;
       }
@@ -565,16 +573,17 @@ async function handleStreaming({ config, profileStore, profile, ledger, body, re
         for (const frame of bufferedFrames) writeRawSse(response, frame);
       }
       if (shouldExposeDTokenMetadata(config, request)) {
-        writeSse(response, "dtoken", shapeAgentResponse(finalDToken, ackMeta, true, clientFormat));
+        writeSse(response, "dtoken", shapeAgentResponse(finalDToken, ackMeta, true, clientFormat, profile));
       }
     }
-    response.write("data: [DONE]\n\n");
+    if (clientFormat !== CLIENT_FORMATS.ANTHROPIC_MESSAGES) response.write("data: [DONE]\n\n");
     response.end();
   } catch (error) {
     stopStreamingHeartbeat(heartbeat);
     ledger.record({ ok: false, mode: "chat.completions.stream", handshakeId: profile.dtoken.handshakeId, model: profile.dtoken.model, error: error.message });
-    writeClientStreamError(response, clientFormat, { error: { type: error.code || "gateway_error", code: error.code || "gateway_error", message: error.message } });
-    response.write("data: [DONE]\n\n");
+    const errorBlockIndex = liveAnthropic ? closeLiveAnthropicOpenBlock(anthropicLive) : 0;
+    writeClientStreamError(response, clientFormat, { error: { type: error.code || "gateway_error", code: error.code || "gateway_error", message: error.message } }, { index: errorBlockIndex });
+    if (clientFormat !== CLIENT_FORMATS.ANTHROPIC_MESSAGES) response.write("data: [DONE]\n\n");
     response.end();
   }
 }
@@ -629,8 +638,8 @@ function authenticateAgent(profileStore, request) {
   return token ? profileStore.getByApiKey(token) : null;
 }
 
-function shapeAgentResponse(payload, ackMeta, exposeDTokenMetadata, clientFormat) {
-  return shapeClientResponse({ payload, ackMeta, exposeDTokenMetadata, clientFormat });
+function shapeAgentResponse(payload, ackMeta, exposeDTokenMetadata, clientFormat, profile) {
+  return shapeClientResponse({ payload, ackMeta, exposeDTokenMetadata, clientFormat, profile });
 }
 
 function shouldExposeDTokenMetadata(config, request) {
@@ -683,12 +692,12 @@ function writeSse(response, event, data) {
   response.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 
-function writeClientStreamError(response, clientFormat, payload) {
+function writeClientStreamError(response, clientFormat, payload, { index = 0 } = {}) {
   const error = payload?.error ?? payload ?? {};
   const type = String(error.type ?? error.code ?? "gateway_error");
   const message = String(error.message ?? "Gateway stream error");
   if (clientFormat === CLIENT_FORMATS.ANTHROPIC_MESSAGES) {
-    writeAnthropicTextAndStop(response, `dToken Gateway error (${type}): ${message}`);
+    writeAnthropicTextAndStop(response, `dToken Gateway error (${type}): ${message}`, index);
     return;
   }
   writeSse(response, "error", {
@@ -700,18 +709,18 @@ function writeClientStreamError(response, clientFormat, payload) {
   });
 }
 
-function writeAnthropicTextAndStop(response, text) {
+function writeAnthropicTextAndStop(response, text, index = 0) {
   writeSse(response, "content_block_start", {
     type: "content_block_start",
-    index: 0,
+    index,
     content_block: { type: "text", text: "" },
   });
   writeSse(response, "content_block_delta", {
     type: "content_block_delta",
-    index: 0,
+    index,
     delta: { type: "text_delta", text },
   });
-  writeSse(response, "content_block_stop", { type: "content_block_stop", index: 0 });
+  writeSse(response, "content_block_stop", { type: "content_block_stop", index });
   writeSse(response, "message_delta", {
     type: "message_delta",
     delta: { stop_reason: "end_turn", stop_sequence: null },
@@ -784,7 +793,7 @@ function replayBufferedResponsesStream(response, { frames, finalPayload, ackMeta
   });
 }
 
-function replayBufferedAnthropicStream(response, { frames, finalPayload, includeStart = true }) {
+function replayBufferedAnthropicStream(response, { frames, finalPayload, includeStart = true, emitThinking = true }) {
   const collected = collectOpenAIStream(frames, finalPayload);
   const id = collected.id || `msg_${Date.now()}`;
   const model = finalPayload?.model || collected.model || "dtoken";
@@ -794,7 +803,7 @@ function replayBufferedAnthropicStream(response, { frames, finalPayload, include
 
   if (includeStart) writeAnthropicMessageStart(response, { id, model, inputTokens });
 
-  if (collected.reasoning) {
+  if (emitThinking && collected.reasoning) {
     writeSse(response, "content_block_start", {
       type: "content_block_start",
       index,
@@ -847,6 +856,15 @@ function replayBufferedAnthropicStream(response, { frames, finalPayload, include
     index++;
   }
 
+  if (index === 0) {
+    writeSse(response, "content_block_start", {
+      type: "content_block_start",
+      index,
+      content_block: { type: "text", text: "" },
+    });
+    writeSse(response, "content_block_stop", { type: "content_block_stop", index });
+  }
+
   writeSse(response, "message_delta", {
     type: "message_delta",
     delta: {
@@ -858,11 +876,12 @@ function replayBufferedAnthropicStream(response, { frames, finalPayload, include
   writeSse(response, "message_stop", { type: "message_stop" });
 }
 
-function createAnthropicLiveState(response) {
+function createAnthropicLiveState(response, { emitThinking = true } = {}) {
   return {
     response,
     index: 0,
     openBlock: null,
+    emitThinking,
     reasoning: "",
     textStarted: false,
     reasoningStarted: false,
@@ -882,21 +901,28 @@ function writeLiveAnthropicFromOpenAI(state, frame) {
   const reasoningDelta = delta.reasoning_content ?? delta.reasoning;
 
   if (typeof reasoningDelta === "string" && reasoningDelta) {
-    if (!state.reasoningStarted) {
-      writeSse(state.response, "content_block_start", {
-        type: "content_block_start",
-        index: state.index,
-        content_block: { type: "thinking", thinking: "" },
-      });
-      state.openBlock = "thinking";
-      state.reasoningStarted = true;
-    }
     state.reasoning += reasoningDelta;
-    writeSse(state.response, "content_block_delta", {
-      type: "content_block_delta",
-      index: state.index,
-      delta: { type: "thinking_delta", thinking: reasoningDelta },
-    });
+    const canEmitReasoning = state.emitThinking && !state.textStarted && state.openBlock !== "text";
+    if (!canEmitReasoning) {
+      // Claude Code validates Anthropic thinking blocks strictly. If a
+      // non-Anthropic upstream sends reasoning late, keep it internal instead
+      // of emitting a thinking delta on a text block.
+    } else {
+      if (!state.reasoningStarted) {
+        writeSse(state.response, "content_block_start", {
+          type: "content_block_start",
+          index: state.index,
+          content_block: { type: "thinking", thinking: "" },
+        });
+        state.openBlock = "thinking";
+        state.reasoningStarted = true;
+      }
+      writeSse(state.response, "content_block_delta", {
+        type: "content_block_delta",
+        index: state.index,
+        delta: { type: "thinking_delta", thinking: reasoningDelta },
+      });
+    }
   }
 
   if (typeof delta.content === "string" && delta.content) {
@@ -923,7 +949,7 @@ function writeLiveAnthropicFromOpenAI(state, frame) {
 }
 
 function closeLiveAnthropicThinking(state) {
-  if (!state || state.openBlock !== "thinking") return;
+  if (!state || !state.emitThinking || state.openBlock !== "thinking") return;
   writeSse(state.response, "content_block_delta", {
     type: "content_block_delta",
     index: state.index,
@@ -935,6 +961,13 @@ function closeLiveAnthropicThinking(state) {
   writeSse(state.response, "content_block_stop", { type: "content_block_stop", index: state.index });
   state.index++;
   state.openBlock = null;
+}
+
+function closeLiveAnthropicOpenBlock(state) {
+  if (!state) return 0;
+  if (state.openBlock === "thinking") closeLiveAnthropicThinking(state);
+  else if (state.openBlock === "text") closeLiveAnthropicText(state);
+  return state.index;
 }
 
 function closeLiveAnthropicText(state) {
@@ -950,7 +983,7 @@ function finalizeLiveAnthropicStream(state, { frames, finalPayload }) {
   closeLiveAnthropicThinking(state);
   closeLiveAnthropicText(state);
 
-  if (!state.reasoningStarted && collected.reasoning) {
+  if (state.emitThinking && !state.reasoningStarted && !state.textStarted && collected.reasoning) {
     writeSse(state.response, "content_block_start", {
       type: "content_block_start",
       index: state.index,
@@ -999,6 +1032,16 @@ function finalizeLiveAnthropicStream(state, { frames, finalPayload }) {
       type: "content_block_delta",
       index: state.index,
       delta: { type: "input_json_delta", partial_json: JSON.stringify(block.input ?? {}) },
+    });
+    writeSse(state.response, "content_block_stop", { type: "content_block_stop", index: state.index });
+    state.index++;
+  }
+
+  if (state.index === 0) {
+    writeSse(state.response, "content_block_start", {
+      type: "content_block_start",
+      index: state.index,
+      content_block: { type: "text", text: "" },
     });
     writeSse(state.response, "content_block_stop", { type: "content_block_stop", index: state.index });
     state.index++;

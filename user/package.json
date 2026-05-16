@@ -7,7 +7,8 @@
     "start": "npm run dtoken:user",
     "dtoken:user": "node apps/dtoken-agent-gateway/src/server.js",
     "agent:gateway": "node apps/dtoken-agent-gateway/src/server.js",
-    "user:serve": "node apps/dtoken-agent-gateway/src/server.js"
+    "user:serve": "node apps/dtoken-agent-gateway/src/server.js",
+    "check:anthropic-bridge": "node scripts/check-anthropic-bridge.mjs"
   },
   "dependencies": {
     "ethers": "^6.16.0"

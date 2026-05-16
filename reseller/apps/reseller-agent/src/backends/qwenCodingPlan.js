@@ -39,7 +39,22 @@ export class QwenCodingPlanBackend extends OpenAICompatibleBackend {
         }),
       });
       const latencyMs = Date.now() - start;
-      return { ok: response.ok, latencyMs, details: { status: response.status, probe: "chat_completions" } };
+      const details = {
+        status: response.status,
+        probe: "chat_completions",
+        baseUrl: this.baseUrl,
+        model: this.healthModel,
+      };
+      if (!response.ok) {
+        let data = null;
+        try {
+          data = await response.json();
+        } catch {}
+        details.errorCode = data?.error?.code ?? data?.code ?? null;
+        details.errorMessage = data?.error?.message ?? data?.message ?? null;
+        details.requestId = data?.request_id ?? data?.id ?? null;
+      }
+      return { ok: response.ok, latencyMs, details };
     } catch (error) {
       return {
         ok: false,

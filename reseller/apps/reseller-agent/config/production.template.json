@@ -7,7 +7,7 @@
     "identities": [],
     "serviceSigner": "${DTOKEN_SERVICE_SIGNER_KEY}",
     "serviceSignerAddress": "0x0000000000000000000000000000000000000000",
-    "minEscrowAmount": "50000",
+    "minEscrowAmount": "100000000000",
     "minProviderAutoSettleAmount": "1"
   },
   "contract": {
