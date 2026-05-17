@@ -1,7 +1,7 @@
 import { providerPath } from "./profileStore.js";
 import { formatHeaders } from "./formatBridge.js";
 
-export async function forwardChatCompletion(profile, body, { stream, clientFormat }) {
+export async function forwardChatCompletion(profile, body, { stream, clientFormat, signal } = {}) {
   const forwarded = {
     ...body,
     model: profile.dtoken.model,
@@ -15,5 +15,6 @@ export async function forwardChatCompletion(profile, body, { stream, clientForma
       ...formatHeaders(profile, clientFormat),
     },
     body: JSON.stringify(forwarded),
+    signal,
   });
 }

@@ -14,6 +14,9 @@ import {
 
 const rateLimitCooldowns = new Map();
 const MAX_RATE_LIMIT_RETRIES = 3;
+const hiddenReasoningCache = new Map();
+const MAX_HIDDEN_REASONING_CACHE_ENTRIES = 200;
+const HIDDEN_REASONING_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
 export function handleModels({ profileStore, ledger, response }) {
   const profiles = profileStore.list();
@@ -98,31 +101,38 @@ export async function handleChatCompletions({
     return;
   }
   body = forceProfileModel(body, profile);
+  body = restoreHiddenReasoningForRequest(body, profile);
 
-  await queue.enqueue(profile.dtoken.handshakeId, async () => {
-    if (budgetExceeded(profile, ledger)) {
-      sendError(response, 402, "gateway_budget_exhausted",
-        "The local Agent Gateway budget limit has been reached for this profile");
-      return;
-    }
-    const preflight = budgetPreflight(profile, ledger, body);
-    if (!preflight.ok) {
-      ledger.record({
-        ok: false,
-        mode: body.stream === true ? "chat.completions.stream" : "chat.completions",
-        handshakeId: profile.dtoken.handshakeId,
-        model: profile.dtoken.model,
-        error: preflight.message,
-      });
-      sendError(response, 402, preflight.code, preflight.message, preflight.extra);
-      return;
-    }
-    if (body.stream === true) {
-      await handleStreaming({ config, profileStore, profile, ledger, body, request, response, clientFormat: effectiveClientFormat });
-    } else {
-      await handleNonStreaming({ config, profileStore, profile, ledger, body, request, response, clientFormat: effectiveClientFormat });
-    }
-  });
+  const clientAbort = createClientAbortTracker({ request, response });
+  try {
+    await queue.enqueue(profile.dtoken.handshakeId, async () => {
+      if (clientAbort.signal.aborted) return;
+      if (budgetExceeded(profile, ledger)) {
+        sendError(response, 402, "gateway_budget_exhausted",
+          "The local Agent Gateway budget limit has been reached for this profile");
+        return;
+      }
+      const preflight = budgetPreflight(profile, ledger, body);
+      if (!preflight.ok) {
+        ledger.record({
+          ok: false,
+          mode: body.stream === true ? "chat.completions.stream" : "chat.completions",
+          handshakeId: profile.dtoken.handshakeId,
+          model: profile.dtoken.model,
+          error: preflight.message,
+        });
+        sendError(response, 402, preflight.code, preflight.message, preflight.extra);
+        return;
+      }
+      if (body.stream === true) {
+        await handleStreaming({ config, profileStore, profile, ledger, body, request, response, clientFormat: effectiveClientFormat, abortSignal: clientAbort.signal });
+      } else {
+        await handleNonStreaming({ config, profileStore, profile, ledger, body, request, response, clientFormat: effectiveClientFormat, abortSignal: clientAbort.signal });
+      }
+    });
+  } finally {
+    clientAbort.cleanup();
+  }
 }
 
 function forceProfileModel(body, profile) {
@@ -135,6 +145,251 @@ function forceProfileModel(body, profile) {
     requested_model: body.model ?? null,
     model: profile.dtoken.model,
   };
+}
+
+function restoreHiddenReasoningForRequest(body, profile) {
+  if (!shouldPreserveHiddenReasoning(profile) || !Array.isArray(body.messages)) return body;
+  const state = getHiddenReasoningState(profile, { create: false });
+
+  let restored = 0;
+  let placeholders = 0;
+  const messages = body.messages.map((message) => {
+    if (!needsHiddenReasoningRestore(message)) return message;
+    const entry = state ? findHiddenReasoningEntry(state, message) : null;
+    if (entry?.reasoning) {
+      restored++;
+      return {
+        ...message,
+        reasoning_content: entry.reasoning,
+        ...(entry.reasoningSignature ? { reasoning_signature: entry.reasoningSignature } : {}),
+      };
+    }
+    if (hasToolCalls(message)) {
+      // DeepSeek thinking-mode tool turns fail when the assistant tool-use
+      // message lacks this field. A blank placeholder keeps older/cache-miss
+      // conversations structurally valid; fresh turns are restored above.
+      placeholders++;
+      return { ...message, reasoning_content: "" };
+    }
+    return message;
+  });
+
+  if (!restored && !placeholders) return body;
+  logHiddenReasoning("restore", {
+    model: profile?.dtoken?.model,
+    restored,
+    placeholders,
+  });
+  return { ...body, messages };
+}
+
+function needsHiddenReasoningRestore(message) {
+  if (!message || message.role !== "assistant") return false;
+  if (message.reasoning_content != null || message.reasoningContent != null) return false;
+  return hasToolCalls(message) || Boolean(contentSignature(message.content));
+}
+
+function hasToolCalls(message) {
+  return Array.isArray(message?.tool_calls) && message.tool_calls.length > 0;
+}
+
+function shouldPreserveHiddenReasoning(profile) {
+  const dtoken = profile?.dtoken ?? {};
+  const runtime = dtoken.runtime ?? {};
+  const explicit =
+    dtoken.preserveReasoningContent ??
+    dtoken.preserve_reasoning_content ??
+    runtime.preserveReasoningContent ??
+    runtime.preserve_reasoning_content;
+  if (explicit != null) return explicit === true || explicit === "true" || explicit === 1 || explicit === "1";
+
+  const family = String(dtoken.providerFamily ?? dtoken.provider_family ?? runtime.providerFamily ?? runtime.provider_family ?? "").toLowerCase();
+  const model = String(dtoken.model ?? dtoken.upstreamModel ?? dtoken.upstream_model ?? runtime.model ?? runtime.upstreamModel ?? runtime.upstream_model ?? "").toLowerCase();
+  return family.includes("deepseek") || model.includes("deepseek");
+}
+
+function rememberHiddenReasoningFromPayload(profile, payload) {
+  rememberHiddenReasoningFromCollected(profile, collectOpenAIStream([], payload));
+}
+
+function rememberHiddenReasoningFromCollected(profile, collected) {
+  if (!shouldPreserveHiddenReasoning(profile)) return;
+  const reasoning = String(collected?.reasoning ?? "");
+  if (!reasoning) return;
+
+  const normalizedToolCalls = normalizeHiddenToolCalls(collected?.toolCalls ?? []);
+  const toolKey = toolCallsSignature(normalizedToolCalls, { includeIds: true });
+  const looseToolKey = toolCallsSignature(normalizedToolCalls, { includeIds: false });
+  const textKey = contentSignature(collected?.text ?? "");
+  const toolCallIds = normalizedToolCalls.map((call) => call.id).filter(Boolean);
+  if (!toolKey && !looseToolKey && !textKey && !toolCallIds.length) return;
+
+  const state = getHiddenReasoningState(profile, { create: true });
+  const entry = {
+    reasoning,
+    reasoningSignature: String(collected?.reasoningSignature ?? ""),
+    toolKey,
+    looseToolKey,
+    textKey,
+    toolCallIds,
+    createdAt: Date.now(),
+  };
+  state.entries.push(entry);
+  rebuildHiddenReasoningIndexes(state);
+  pruneHiddenReasoningState(state);
+  logHiddenReasoning("remember", {
+    model: profile?.dtoken?.model,
+    toolCalls: toolCallIds.length || normalizedToolCalls.length,
+    hasText: Boolean(textKey),
+    reasoningChars: reasoning.length,
+  });
+}
+
+function getHiddenReasoningState(profile, { create = true } = {}) {
+  const scope = [
+    profile?.dtoken?.handshakeId ?? "",
+    profile?.dtoken?.model ?? "",
+  ].join("|");
+  if (!scope.trim()) return null;
+  let state = hiddenReasoningCache.get(scope);
+  if (!state && create) {
+    state = {
+      entries: [],
+      byToolId: new Map(),
+      byToolKey: new Map(),
+      byLooseToolKey: new Map(),
+      byTextKey: new Map(),
+    };
+    hiddenReasoningCache.set(scope, state);
+  }
+  if (state) pruneHiddenReasoningState(state);
+  return state;
+}
+
+function findHiddenReasoningEntry(state, message) {
+  const toolCalls = normalizeHiddenToolCalls(message?.tool_calls ?? []);
+  for (const id of toolCalls.map((call) => call.id).filter(Boolean)) {
+    const entry = state.byToolId.get(id);
+    if (entry) return entry;
+  }
+
+  const toolKey = toolCallsSignature(toolCalls, { includeIds: true });
+  if (toolKey && state.byToolKey.has(toolKey)) return state.byToolKey.get(toolKey);
+
+  const looseToolKey = toolCallsSignature(toolCalls, { includeIds: false });
+  if (looseToolKey && state.byLooseToolKey.has(looseToolKey)) return state.byLooseToolKey.get(looseToolKey);
+
+  const textKey = contentSignature(message?.content ?? "");
+  if (textKey && state.byTextKey.has(textKey)) return state.byTextKey.get(textKey);
+  return null;
+}
+
+function pruneHiddenReasoningState(state) {
+  const cutoff = Date.now() - HIDDEN_REASONING_CACHE_TTL_MS;
+  const before = state.entries.length;
+  state.entries = state.entries
+    .filter((entry) => entry.createdAt >= cutoff)
+    .slice(-MAX_HIDDEN_REASONING_CACHE_ENTRIES);
+  if (state.entries.length !== before) rebuildHiddenReasoningIndexes(state);
+}
+
+function rebuildHiddenReasoningIndexes(state) {
+  state.byToolId.clear();
+  state.byToolKey.clear();
+  state.byLooseToolKey.clear();
+  state.byTextKey.clear();
+  for (const entry of state.entries) {
+    for (const id of entry.toolCallIds ?? []) state.byToolId.set(id, entry);
+    if (entry.toolKey) state.byToolKey.set(entry.toolKey, entry);
+    if (entry.looseToolKey) state.byLooseToolKey.set(entry.looseToolKey, entry);
+    if (entry.textKey) state.byTextKey.set(entry.textKey, entry);
+  }
+}
+
+function normalizeHiddenToolCalls(toolCalls) {
+  if (!Array.isArray(toolCalls)) return [];
+  return toolCalls.map((call, index) => {
+    const fn = call?.function ?? {};
+    return {
+      order: Number.isInteger(call?.index) ? call.index : index,
+      id: String(call?.id ?? call?.tool_call_id ?? ""),
+      type: String(call?.type ?? "function"),
+      name: String(fn.name ?? call?.name ?? ""),
+      arguments: normalizeHiddenArguments(fn.arguments ?? call?.arguments ?? ""),
+    };
+  }).filter((call) => call.id || call.name || call.arguments);
+}
+
+function normalizeHiddenArguments(value) {
+  if (value == null || value === "") return "";
+  if (typeof value !== "string") return stableStringify(value);
+  const text = value.trim();
+  if (!text) return "";
+  try {
+    return stableStringify(JSON.parse(text));
+  } catch {
+    return text;
+  }
+}
+
+function toolCallsSignature(toolCalls, { includeIds }) {
+  if (!Array.isArray(toolCalls) || !toolCalls.length) return "";
+  const compact = toolCalls
+    .slice()
+    .sort((a, b) => a.order - b.order)
+    .map((call) => ({
+      ...(includeIds ? { id: call.id } : {}),
+      type: call.type,
+      name: call.name,
+      arguments: call.arguments,
+    }));
+  return hashString(stableStringify(compact));
+}
+
+function contentSignature(content) {
+  const text = contentText(content).trim();
+  return text ? hashString(text) : "";
+}
+
+function contentText(content) {
+  if (typeof content === "string") return content;
+  if (content == null) return "";
+  if (Array.isArray(content)) {
+    return content.map((part) => {
+      if (typeof part === "string") return part;
+      if (!part || typeof part !== "object") return "";
+      if (typeof part.text === "string") return part.text;
+      if (typeof part.content === "string") return part.content;
+      return "";
+    }).filter(Boolean).join("\n");
+  }
+  if (typeof content === "object") {
+    if (typeof content.text === "string") return content.text;
+    if (typeof content.content === "string") return content.content;
+  }
+  return "";
+}
+
+function stableStringify(value) {
+  if (value === undefined) return "undefined";
+  if (value == null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(",")}}`;
+}
+
+function hashString(value) {
+  const text = String(value ?? "");
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+function logHiddenReasoning(event, meta = {}) {
+  const safe = Object.fromEntries(Object.entries(meta).filter(([, value]) => value != null));
+  console.log(`[dtoken-user] hidden_reasoning_${event} ${JSON.stringify(safe)}`);
 }
 
 function budgetExceeded(profile, ledger) {
@@ -332,12 +587,13 @@ function estimateMediaTokens(messages) {
   return total;
 }
 
-async function forwardWithRateLimitRetry(profile, body, { stream, clientFormat }) {
+async function forwardWithRateLimitRetry(profile, body, { stream, clientFormat, signal }) {
   const key = rateLimitKey(profile);
   let last = null;
   for (let attempt = 0; attempt <= MAX_RATE_LIMIT_RETRIES; attempt++) {
-    await waitForRateLimitCooldown(key);
-    const upstream = await forwardChatCompletion(profile, body, { stream, clientFormat });
+    throwIfAborted(signal);
+    await waitForRateLimitCooldown(key, signal);
+    const upstream = await forwardChatCompletion(profile, body, { stream, clientFormat, signal });
     const contentType = upstream.headers.get("content-type") || "";
     if (stream && contentType.includes("text/event-stream")) {
       return { upstream, payload: null };
@@ -349,7 +605,7 @@ async function forwardWithRateLimitRetry(profile, body, { stream, clientFormat }
     if (!retryMs || attempt >= MAX_RATE_LIMIT_RETRIES) return last;
 
     const waitMs = setRateLimitCooldown(key, retryMs);
-    await sleep(waitMs);
+    await sleep(waitMs, signal);
   }
   return last;
 }
@@ -362,10 +618,10 @@ function rateLimitKey(profile) {
   ].join("|");
 }
 
-async function waitForRateLimitCooldown(key) {
+async function waitForRateLimitCooldown(key, signal) {
   const until = Number(rateLimitCooldowns.get(key) || 0);
   const waitMs = until - Date.now();
-  if (waitMs > 0) await sleep(waitMs);
+  if (waitMs > 0) await sleep(waitMs, signal);
 }
 
 function setRateLimitCooldown(key, retryMs) {
@@ -398,23 +654,43 @@ function retryAfterMs(upstream, payload) {
   return 5000;
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+function sleep(ms, signal) {
+  throwIfAborted(signal);
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(done, Math.max(0, Number(ms) || 0));
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(abortError(signal));
+    };
+    function done() {
+      signal?.removeEventListener?.("abort", onAbort);
+      resolve();
+    }
+    signal?.addEventListener?.("abort", onAbort, { once: true });
+  });
 }
 
-async function handleNonStreaming({ config, profileStore, profile, ledger, body, request, response, clientFormat }) {
+async function handleNonStreaming({ config, profileStore, profile, ledger, body, request, response, clientFormat, abortSignal }) {
   let upstream;
   let upstreamPayload;
   try {
-    const result = await forwardWithRateLimitRetry(profile, body, { stream: false, clientFormat });
+    const result = await forwardWithRateLimitRetry(profile, body, { stream: false, clientFormat, signal: abortSignal });
     upstream = result.upstream;
     upstreamPayload = result.payload;
   } catch (error) {
+    if (isClientAbortError(error, abortSignal)) {
+      ledger.record({ ok: false, mode: "chat.completions", handshakeId: profile.dtoken.handshakeId, model: profile.dtoken.model, error: "client_closed" });
+      return;
+    }
     ledger.record({ ok: false, mode: "chat.completions", handshakeId: profile.dtoken.handshakeId, model: profile.dtoken.model, error: error.message });
     sendError(response, 502, "provider_unreachable", error.message);
     return;
   }
   const payload = upstreamPayload ?? await upstream.json().catch(() => null);
+  if (abortSignal?.aborted) {
+    ledger.record({ ok: false, mode: "chat.completions", handshakeId: profile.dtoken.handshakeId, model: profile.dtoken.model, error: "client_closed" });
+    return;
+  }
   if (!upstream.ok || payload?.error) {
     const err = payload?.error ?? {};
     ledger.record({ ok: false, mode: "chat.completions", handshakeId: profile.dtoken.handshakeId, model: profile.dtoken.model, error: err.message || `HTTP ${upstream.status}` });
@@ -426,18 +702,23 @@ async function handleNonStreaming({ config, profileStore, profile, ledger, body,
   }
 
   const ackMeta = await acknowledgeAndRecord({ profile, ledger, dtoken: payload.dtoken, mode: "chat.completions" });
+  rememberHiddenReasoningFromPayload(profile, payload);
+  if (abortSignal?.aborted) return;
   sendJson(response, 200, shapeAgentResponse(payload, ackMeta, shouldExposeDTokenMetadata(config, request), clientFormat, profile));
 }
 
-async function handleStreaming({ config, profileStore, profile, ledger, body, request, response, clientFormat }) {
+async function handleStreaming({ config, profileStore, profile, ledger, body, request, response, clientFormat, abortSignal }) {
   let upstream;
   let upstreamPayload;
   let streamStarted = false;
   let anthropicStarted = false;
   let heartbeat = null;
+  let reader = null;
+  const requestId = createRequestId();
+  logStreamLifecycle("start", { requestId, clientFormat, model: profile.dtoken.model });
   const ensureStreamStarted = () => {
     if (streamStarted) return;
-    startSse(response);
+    startSse(response, clientFormat);
     streamStarted = true;
     anthropicStarted = clientFormat === CLIENT_FORMATS.ANTHROPIC_MESSAGES;
     if (anthropicStarted) {
@@ -451,10 +732,15 @@ async function handleStreaming({ config, profileStore, profile, ledger, body, re
   };
 
   try {
-    const result = await forwardWithRateLimitRetry(profile, body, { stream: true, clientFormat });
+    const result = await forwardWithRateLimitRetry(profile, body, { stream: true, clientFormat, signal: abortSignal });
     upstream = result.upstream;
     upstreamPayload = result.payload;
   } catch (error) {
+    if (isClientAbortError(error, abortSignal)) {
+      ledger.record({ ok: false, mode: "chat.completions.stream", handshakeId: profile.dtoken.handshakeId, model: profile.dtoken.model, error: "client_closed" });
+      logStreamLifecycle("client_closed_before_upstream", { requestId, clientFormat, model: profile.dtoken.model });
+      return;
+    }
     ledger.record({ ok: false, mode: "chat.completions.stream", handshakeId: profile.dtoken.handshakeId, model: profile.dtoken.model, error: error.message });
     if (streamStarted) {
       stopStreamingHeartbeat(heartbeat);
@@ -470,6 +756,10 @@ async function handleStreaming({ config, profileStore, profile, ledger, body, re
   const contentType = upstream.headers.get("content-type") || "";
   if (!contentType.includes("text/event-stream")) {
     const payload = upstreamPayload ?? await upstream.json().catch(() => null);
+    if (abortSignal?.aborted) {
+      ledger.record({ ok: false, mode: "chat.completions.stream", handshakeId: profile.dtoken.handshakeId, model: profile.dtoken.model, error: "client_closed" });
+      return;
+    }
     ledger.record({ ok: false, mode: "chat.completions.stream", handshakeId: profile.dtoken.handshakeId, model: profile.dtoken.model, error: payload?.error?.message || `HTTP ${upstream.status}` });
     if (streamStarted) {
       stopStreamingHeartbeat(heartbeat);
@@ -487,7 +777,7 @@ async function handleStreaming({ config, profileStore, profile, ledger, body, re
   }
 
   ensureStreamStarted();
-  const reader = upstream.body.getReader();
+  reader = upstream.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   let finalDToken = null;
@@ -495,11 +785,17 @@ async function handleStreaming({ config, profileStore, profile, ledger, body, re
   const bufferedFrames = [];
   const liveOpenAIChat = clientFormat === CLIENT_FORMATS.OPENAI_CHAT;
   const liveAnthropic = clientFormat === CLIENT_FORMATS.ANTHROPIC_MESSAGES;
+  const openAIChatLive = liveOpenAIChat ? createOpenAIChatLiveState(response, { model: profile.dtoken.model }) : null;
+  if (openAIChatLive) {
+    writeOpenAIChatChunk(openAIChatLive, { delta: { role: "assistant" } });
+    openAIChatLive.roleEmitted = true;
+  }
   const emitAnthropicThinking = liveAnthropic && shouldEmitAnthropicThinking(profile);
   const anthropicLive = liveAnthropic ? createAnthropicLiveState(response, { emitThinking: emitAnthropicThinking }) : null;
 
   try {
     while (true) {
+      throwIfAborted(abortSignal);
       const { done, value } = await reader.read();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
@@ -517,11 +813,9 @@ async function handleStreaming({ config, profileStore, profile, ledger, body, re
           providerError = safeJson(event.data);
           continue;
         }
-        if (liveOpenAIChat) writeRawSse(response, event.raw);
-        else {
-          bufferedFrames.push(event.raw);
-          if (liveAnthropic) writeLiveAnthropicFromOpenAI(anthropicLive, event.raw);
-        }
+        bufferedFrames.push(event.raw);
+        if (liveOpenAIChat) writeLiveOpenAIChatFromOpenAI(openAIChatLive, event.raw);
+        else if (liveAnthropic) writeLiveAnthropicFromOpenAI(anthropicLive, event.raw);
       }
     }
 
@@ -530,14 +824,13 @@ async function handleStreaming({ config, profileStore, profile, ledger, body, re
       if (event?.event === "dtoken") finalDToken = JSON.parse(event.data);
       else if (event?.event === "error") providerError = safeJson(event.data);
       else if (event?.data && event.data !== "[DONE]") {
-        if (liveOpenAIChat) writeRawSse(response, event.raw);
-        else {
-          bufferedFrames.push(event.raw);
-          if (liveAnthropic) writeLiveAnthropicFromOpenAI(anthropicLive, event.raw);
-        }
+        bufferedFrames.push(event.raw);
+        if (liveOpenAIChat) writeLiveOpenAIChatFromOpenAI(openAIChatLive, event.raw);
+        else if (liveAnthropic) writeLiveAnthropicFromOpenAI(anthropicLive, event.raw);
       }
     }
 
+    throwIfAborted(abortSignal);
     if (providerError) {
       stopStreamingHeartbeat(heartbeat);
       ledger.record({ ok: false, mode: "chat.completions.stream", handshakeId: profile.dtoken.handshakeId, model: profile.dtoken.model, error: providerError?.error?.message || "provider stream error" });
@@ -546,7 +839,10 @@ async function handleStreaming({ config, profileStore, profile, ledger, body, re
       writeClientStreamError(response, clientFormat, providerError, { index: errorBlockIndex });
     } else {
       const ackMeta = await acknowledgeAndRecord({ profile, ledger, dtoken: finalDToken?.dtoken, mode: "chat.completions.stream" });
+      const collected = collectOpenAIStream(bufferedFrames, finalDToken);
+      rememberHiddenReasoningFromCollected(profile, collected);
       stopStreamingHeartbeat(heartbeat);
+      if (abortSignal?.aborted) return;
       if (clientFormat === CLIENT_FORMATS.ANTHROPIC_MESSAGES) {
         if (liveAnthropic) finalizeLiveAnthropicStream(anthropicLive, { frames: bufferedFrames, finalPayload: finalDToken });
         else replayBufferedAnthropicStream(response, {
@@ -569,6 +865,26 @@ async function handleStreaming({ config, profileStore, profile, ledger, body, re
         response.end();
         return;
       }
+      if (clientFormat === CLIENT_FORMATS.OPENAI_CHAT) {
+        finalizeLiveOpenAIChatStream(openAIChatLive, {
+          frames: bufferedFrames,
+          finalPayload: finalDToken,
+        });
+        if (shouldExposeDTokenMetadata(config, request)) {
+          writeSse(response, "dtoken", shapeAgentResponse(finalDToken, ackMeta, true, clientFormat, profile));
+        }
+        logStreamLifecycle("completed", {
+          requestId,
+          clientFormat,
+          model: profile.dtoken.model,
+          contentChunks: openAIChatLive?.contentChunks ?? 0,
+          reasoningChunks: openAIChatLive?.reasoningChunks ?? 0,
+          toolChunks: openAIChatLive?.toolChunks ?? 0,
+        });
+        response.write("data: [DONE]\n\n");
+        response.end();
+        return;
+      }
       if (!liveOpenAIChat) {
         for (const frame of bufferedFrames) writeRawSse(response, frame);
       }
@@ -580,6 +896,21 @@ async function handleStreaming({ config, profileStore, profile, ledger, body, re
     response.end();
   } catch (error) {
     stopStreamingHeartbeat(heartbeat);
+    if (isClientAbortError(error, abortSignal)) {
+      try {
+        await reader?.cancel?.();
+      } catch {}
+      ledger.record({ ok: false, mode: "chat.completions.stream", handshakeId: profile.dtoken.handshakeId, model: profile.dtoken.model, error: "client_closed" });
+      logStreamLifecycle("client_closed", {
+        requestId,
+        clientFormat,
+        model: profile.dtoken.model,
+        contentChunks: openAIChatLive?.contentChunks ?? 0,
+        reasoningChunks: openAIChatLive?.reasoningChunks ?? 0,
+        toolChunks: openAIChatLive?.toolChunks ?? 0,
+      });
+      return;
+    }
     ledger.record({ ok: false, mode: "chat.completions.stream", handshakeId: profile.dtoken.handshakeId, model: profile.dtoken.model, error: error.message });
     const errorBlockIndex = liveAnthropic ? closeLiveAnthropicOpenBlock(anthropicLive) : 0;
     writeClientStreamError(response, clientFormat, { error: { type: error.code || "gateway_error", code: error.code || "gateway_error", message: error.message } }, { index: errorBlockIndex });
@@ -648,6 +979,62 @@ function shouldExposeDTokenMetadata(config, request) {
   return header === "true" || header === "1" || header === "yes";
 }
 
+function createClientAbortTracker({ request, response }) {
+  const controller = new AbortController();
+  let settled = false;
+  const abort = () => {
+    if (settled || controller.signal.aborted) return;
+    const error = new Error("Client connection closed");
+    error.code = "client_closed";
+    controller.abort(error);
+  };
+  request.on?.("aborted", abort);
+  response.on?.("close", abort);
+  response.on?.("error", abort);
+  return {
+    signal: controller.signal,
+    cleanup() {
+      settled = true;
+      request.off?.("aborted", abort);
+      response.off?.("close", abort);
+      response.off?.("error", abort);
+    },
+  };
+}
+
+function throwIfAborted(signal) {
+  if (signal?.aborted) throw abortError(signal);
+}
+
+function abortError(signal) {
+  const reason = signal?.reason;
+  if (reason instanceof Error) return reason;
+  const error = new Error("Client connection closed");
+  error.code = "client_closed";
+  return error;
+}
+
+function isClientAbortError(error, signal) {
+  return error?.code === "client_closed" ||
+    (signal?.aborted && (error?.name === "AbortError" || error?.code === 20 || /aborted|closed/i.test(String(error?.message ?? ""))));
+}
+
+function createRequestId() {
+  return `gw_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function logStreamLifecycle(event, meta = {}) {
+  const safe = {
+    requestId: meta.requestId,
+    clientFormat: meta.clientFormat,
+    model: meta.model,
+    contentChunks: meta.contentChunks,
+    reasoningChunks: meta.reasoningChunks,
+    toolChunks: meta.toolChunks,
+  };
+  console.log(`[dtoken-user] stream_${event} ${JSON.stringify(Object.fromEntries(Object.entries(safe).filter(([, value]) => value != null)))}`);
+}
+
 function startSse(response) {
   response.socket?.setNoDelay?.(true);
   response.writeHead(200, {
@@ -660,21 +1047,17 @@ function startSse(response) {
     "Access-Control-Allow-Headers": "Content-Type, Authorization, x-api-key, anthropic-version, X-dToken-Expose-Metadata",
   });
   response.flushHeaders?.();
-  response.write(": dtoken-user-gateway\n\n");
 }
 
 function startStreamingHeartbeat(response, clientFormat) {
+  if (clientFormat !== CLIENT_FORMATS.ANTHROPIC_MESSAGES) return null;
   const timer = setInterval(() => {
     if (response.writableEnded || response.destroyed) {
       stopStreamingHeartbeat(timer);
       return;
     }
     try {
-      if (clientFormat === CLIENT_FORMATS.ANTHROPIC_MESSAGES) {
-        writeSse(response, "ping", { type: "ping" });
-      } else {
-        response.write(": dtoken-user-gateway-keepalive\n\n");
-      }
+      writeSse(response, "ping", { type: "ping" });
     } catch {
       stopStreamingHeartbeat(timer);
     }
@@ -698,6 +1081,13 @@ function writeClientStreamError(response, clientFormat, payload, { index = 0 } =
   const message = String(error.message ?? "Gateway stream error");
   if (clientFormat === CLIENT_FORMATS.ANTHROPIC_MESSAGES) {
     writeAnthropicTextAndStop(response, `dToken Gateway error (${type}): ${message}`, index);
+    return;
+  }
+  if (clientFormat === CLIENT_FORMATS.OPENAI_CHAT) {
+    const state = createOpenAIChatLiveState(response, { model: "dtoken" });
+    writeOpenAIChatChunk(state, { delta: { role: "assistant" } });
+    writeOpenAIChatChunk(state, { delta: { content: `dToken Gateway error (${type}): ${message}` } });
+    writeOpenAIChatChunk(state, { delta: {}, finishReason: "stop" });
     return;
   }
   writeSse(response, "error", {
@@ -731,6 +1121,111 @@ function writeAnthropicTextAndStop(response, text, index = 0) {
 
 function writeRawSse(response, raw) {
   response.write(raw.endsWith("\n\n") ? raw : `${raw}\n\n`);
+}
+
+function createOpenAIChatLiveState(response, { model = "dtoken" } = {}) {
+  return {
+    response,
+    id: `chatcmpl_dtoken_${Date.now()}`,
+    object: "chat.completion.chunk",
+    created: Math.floor(Date.now() / 1000),
+    model,
+    roleEmitted: false,
+    contentChunks: 0,
+    reasoningChunks: 0,
+    toolChunks: 0,
+    chunksEmitted: 0,
+    reasoning: "",
+    toolCalls: [],
+    finishReason: "stop",
+  };
+}
+
+function writeLiveOpenAIChatFromOpenAI(state, frame) {
+  if (!state) return;
+  const event = parseSseEvent(frame);
+  if (!event?.data || event.data === "[DONE]") return;
+  const chunk = safeJson(event.data);
+  if (!chunk || chunk.error) return;
+  if (chunk.id) state.id = chunk.id;
+  if (chunk.object) state.object = chunk.object;
+  if (chunk.created) state.created = chunk.created;
+  if (chunk.model) state.model = chunk.model;
+
+  const choice = chunk.choices?.[0] ?? {};
+  if (choice.finish_reason) state.finishReason = choice.finish_reason;
+  const delta = choice.delta ?? {};
+
+  if (delta.role && !state.roleEmitted) {
+    writeOpenAIChatChunk(state, { delta: { role: String(delta.role) } });
+    state.roleEmitted = true;
+  }
+
+  const reasoningDelta = delta.reasoning_content ?? delta.reasoning;
+  if (typeof reasoningDelta === "string" && reasoningDelta) {
+    state.reasoning += reasoningDelta;
+    state.reasoningChunks++;
+  }
+
+  if (typeof delta.content === "string" && delta.content) {
+    if (!state.roleEmitted) {
+      writeOpenAIChatChunk(state, { delta: { role: "assistant" } });
+      state.roleEmitted = true;
+    }
+    writeOpenAIChatChunk(state, { delta: { content: delta.content } });
+    state.contentChunks++;
+  }
+
+  if (Array.isArray(delta.tool_calls) && delta.tool_calls.length) {
+    mergeToolCallDeltas(state.toolCalls, delta.tool_calls);
+    writeOpenAIChatChunk(state, { delta: { tool_calls: delta.tool_calls } });
+    state.toolChunks++;
+  }
+}
+
+function finalizeLiveOpenAIChatStream(state, { frames, finalPayload }) {
+  if (!state) return;
+  const collected = collectOpenAIStream(frames, finalPayload);
+  if (collected.id) state.id = collected.id;
+  if (collected.model) state.model = collected.model;
+  if (collected.finishReason) state.finishReason = collected.finishReason;
+
+  if (!state.roleEmitted) {
+    writeOpenAIChatChunk(state, { delta: { role: "assistant" } });
+    state.roleEmitted = true;
+  }
+
+  const fallbackText = state.contentChunks === 0
+    ? (collected.text || state.reasoning || collected.reasoning || "")
+    : "";
+  if (fallbackText) {
+    writeOpenAIChatChunk(state, { delta: { content: fallbackText } });
+    state.contentChunks++;
+  }
+
+  const toolCalls = collected.toolCalls.length ? collected.toolCalls : state.toolCalls;
+  if (!state.toolChunks && toolCalls.length) {
+    writeOpenAIChatChunk(state, { delta: { tool_calls: toolCalls.map((call, index) => ({ ...call, index })) } });
+    state.toolChunks++;
+  }
+
+  const finishReason = toolCalls.length ? "tool_calls" : (state.finishReason || "stop");
+  writeOpenAIChatChunk(state, { delta: {}, finishReason });
+}
+
+function writeOpenAIChatChunk(state, { delta = {}, finishReason = null } = {}) {
+  writeSse(state.response, "", {
+    id: state.id,
+    object: state.object,
+    created: state.created,
+    model: state.model,
+    choices: [{
+      index: 0,
+      delta,
+      finish_reason: finishReason,
+    }],
+  });
+  state.chunksEmitted++;
 }
 
 function replayBufferedResponsesStream(response, { frames, finalPayload, ackMeta, exposeDTokenMetadata }) {

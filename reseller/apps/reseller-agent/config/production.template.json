@@ -7,7 +7,7 @@
     "identities": [],
     "serviceSigner": "${DTOKEN_SERVICE_SIGNER_KEY}",
     "serviceSignerAddress": "0x0000000000000000000000000000000000000000",
-    "minEscrowAmount": "100000000000",
+    "minEscrowAmount": "10000000000",
     "minProviderAutoSettleAmount": "1"
   },
   "contract": {
@@ -25,21 +25,21 @@
       "company": "deepseek",
       "apiKey": "${DTOKEN_UPSTREAM_DEEPSEEK_KEY}",
       "optional": true,
-      "timeoutMs": 90000
+      "timeoutMs": 300000
     },
     {
       "id": "kimi",
       "company": "kimi",
       "apiKey": "${DTOKEN_UPSTREAM_KIMI_KEY}",
       "optional": true,
-      "timeoutMs": 90000
+      "timeoutMs": 300000
     },
     {
       "id": "gemini",
       "company": "gemini",
       "apiKey": "${DTOKEN_UPSTREAM_GEMINI_KEY}",
       "optional": true,
-      "timeoutMs": 90000
+      "timeoutMs": 300000
     },
     {
       "id": "openai-responses",
@@ -47,14 +47,14 @@
       "apiFlavor": "responses",
       "apiKey": "${DTOKEN_UPSTREAM_OPENAI_KEY}",
       "optional": true,
-      "timeoutMs": 90000
+      "timeoutMs": 300000
     },
     {
       "id": "anthropic",
       "company": "anthropic",
       "apiKey": "${DTOKEN_UPSTREAM_ANTHROPIC_KEY}",
       "optional": true,
-      "timeoutMs": 90000
+      "timeoutMs": 300000
     },
     {
       "id": "qwen",
@@ -64,35 +64,35 @@
       "healthModel": "qwen3.6-plus",
       "apiKey": "${DTOKEN_UPSTREAM_QWEN_KEY}",
       "optional": true,
-      "timeoutMs": 90000
+      "timeoutMs": 300000
     },
     {
       "id": "xai",
       "company": "grok",
       "apiKey": "${DTOKEN_UPSTREAM_XAI_KEY}",
       "optional": true,
-      "timeoutMs": 90000
+      "timeoutMs": 300000
     },
     {
       "id": "glm",
       "company": "glm",
       "apiKey": "${DTOKEN_UPSTREAM_GLM_KEY}",
       "optional": true,
-      "timeoutMs": 90000
+      "timeoutMs": 300000
     },
     {
       "id": "mistral",
       "company": "mistral",
       "apiKey": "${DTOKEN_UPSTREAM_MISTRAL_KEY}",
       "optional": true,
-      "timeoutMs": 90000
+      "timeoutMs": 300000
     },
     {
       "id": "openrouter",
       "company": "openrouter",
       "apiKey": "${DTOKEN_UPSTREAM_OPENROUTER_KEY}",
       "optional": true,
-      "timeoutMs": 90000
+      "timeoutMs": 300000
     }
   ],
   "modelCatalogs": [

@@ -7,6 +7,7 @@
  */
 
 import { UpstreamBackendError } from "./interface.js";
+import { DEFAULT_UPSTREAM_TIMEOUT_MS, readTimedStreamChunk, timedFetch } from "./timedFetch.js";
 import { normalizeAssistantOutput, renderMessagesForProvider } from "../services/multimodal.js";
 
 export class AnthropicBackend {
@@ -14,7 +15,8 @@ export class AnthropicBackend {
     this.id = config.id;
     this.baseUrl = (config.baseUrl ?? "https://api.anthropic.com/v1").replace(/\/$/, "");
     this.apiKey = config.apiKey;
-    this.timeoutMs = config.timeoutMs ?? 60000;
+    this.timeoutMs = config.timeoutMs ?? DEFAULT_UPSTREAM_TIMEOUT_MS;
+    this.logTimings = config.logTimings ?? true;
     this.defaultHeaders = config.defaultHeaders ?? {};
     this.anthropicVersion = config.anthropicVersion ?? "2023-06-01";
     this.defaultMaxTokens = config.defaultMaxTokens ?? 1024;
@@ -163,7 +165,11 @@ export class AnthropicBackend {
     };
 
     while (true) {
-      const { value, done } = await reader.read();
+      const { value, done } = await readTimedStreamChunk(reader, response, {
+        upstreamId: this.id,
+        timeoutMs: this.timeoutMs,
+        logTimings: this.logTimings,
+      });
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
       const frames = buffer.split(/\r?\n\r?\n/);
@@ -265,13 +271,13 @@ export class AnthropicBackend {
 
   async _fetch(path, options = {}) {
     const url = `${this.baseUrl}${path}`;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
-
-    try {
-      return await fetch(url, {
+    return timedFetch({
+      upstreamId: this.id,
+      url,
+      timeoutMs: this.timeoutMs,
+      logTimings: this.logTimings,
+      options: {
         ...options,
-        signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
           "x-api-key": this.apiKey,
@@ -279,21 +285,8 @@ export class AnthropicBackend {
           ...this.defaultHeaders,
           ...(options.headers ?? {}),
         },
-      });
-    } catch (error) {
-      if (error.name === "AbortError") {
-        throw new UpstreamBackendError(
-          `Upstream ${this.id} timed out after ${this.timeoutMs}ms`,
-          { code: "upstream_timeout" },
-        );
-      }
-      throw new UpstreamBackendError(
-        `Upstream ${this.id} request failed: ${error.message}`,
-        { code: "upstream_network_error" },
-      );
-    } finally {
-      clearTimeout(timeout);
-    }
+      },
+    });
   }
 
   async _fetchJson(path, options = {}) {

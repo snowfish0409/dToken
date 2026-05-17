@@ -81,7 +81,7 @@ DTOKEN_PROVIDER_PRIVATE_KEY=0xYourProviderPrivateKey
 DTOKEN_SERVICE_SIGNER_ADDRESS=0xYourProviderWallet
 DTOKEN_SERVICE_SIGNER_KEY=0xYourProviderPrivateKey
 
-DTOKEN_UPSTREAM_QWEN_KEY=sk-sp-your-token-plan-key
+DTOKEN_UPSTREAM_QWEN_KEY=YOUR_QWEN_TOKEN_PLAN_API_KEY
 ```
 
 The first deployment may reuse the Provider wallet as the service signer. For production hardening, a separate service signer wallet is possible, but the Provider wallet must remain the wallet used for on-chain model announcement and settlement.
@@ -106,7 +106,7 @@ The production template already contains the adapter entry:
   "healthModel": "qwen3.6-plus",
   "apiKey": "${DTOKEN_UPSTREAM_QWEN_KEY}",
   "optional": true,
-  "timeoutMs": 90000
+  "timeoutMs": 300000
 }
 ```
 
@@ -126,8 +126,8 @@ upstream: qwen
 upstreamModel: qwen3.6-plus
 contextLength: 1048576
 capabilities: chat, vision, image, video, multimodal, reasoning
-inputTokenPrice: 1000000 dToken / token
-outputTokenPrice: 3000000 dToken / token
+inputTokenPrice: 100000 dToken / token
+outputTokenPrice: 300000 dToken / token
 ```
 
 If you need different prices, override the catalog model by adding a model with the same `displayName` under `models` in `config/production.json`.
@@ -225,9 +225,9 @@ For the default Qwen Token Plan catalog entry, Provider Console should use:
 | Model ID | `qwen3.6-plus` |
 | Model Display Name | `qwen3.6-plus` |
 | Public API Endpoint | `http://YOUR_SERVER_IP_OR_DOMAIN:8788/v1` or your HTTPS `/v1` URL |
-| Input Token Price | `1000000` |
-| Output Token Price | `3000000` |
-| Minimum Escrow | `100000000000` |
+| Input Token Price | `100000` |
+| Output Token Price | `300000` |
+| Minimum Escrow | `10000000000` |
 | Provider Wallet | `DTOKEN_PROVIDER_WALLET` |
 
 The on-chain model announcement must match the Provider service node configuration exactly. A different model name, price, wallet, or endpoint can make the announcement unusable.
@@ -250,6 +250,40 @@ mkdir -p /opt/dtoken
 Then upload this `reseller` directory to `/opt/dtoken`, fill `.env`, run preflight checks, and start with `npm run pm2:start`.
 
 Only delete old `data/` if you are sure there are no active handshakes or settlement credentials you still need.
+
+## Upstream Timing Diagnostics
+
+All HTTP upstream backends now use the shared timed fetch layer:
+
+```text
+apps/reseller-agent/src/backends/timedFetch.js
+```
+
+This applies to OpenAI-compatible providers, Qwen Token Plan, Anthropic, Gemini, and OpenAI Responses style adapters. The default timeout is now `300000ms`, and the production template sets each upstream to `300000ms`.
+
+PM2 logs include `[upstream-timing]` entries with these phases:
+
+```text
+request_started
+response_headers_received
+first_stream_chunk_received
+stream_completed
+timeout
+```
+
+The timeout phase tells you what happened:
+
+```text
+waiting_for_response_headers      upstream did not return HTTP headers in time
+waiting_for_first_stream_chunk    headers arrived, but no stream chunk arrived in time
+waiting_for_next_stream_chunk     stream started, then stalled between chunks
+```
+
+To disable these diagnostics temporarily:
+
+```bash
+DTOKEN_UPSTREAM_TIMING_LOG=0 npm run pm2:restart
+```
 
 ## Troubleshooting
 

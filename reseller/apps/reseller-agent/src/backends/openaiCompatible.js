@@ -11,6 +11,7 @@
  */
 
 import { UpstreamBackendError } from "./interface.js";
+import { DEFAULT_UPSTREAM_TIMEOUT_MS, readTimedStreamChunk, timedFetch } from "./timedFetch.js";
 import { normalizeAssistantOutput, renderMessagesForProvider } from "../services/multimodal.js";
 
 export class OpenAICompatibleBackend {
@@ -19,14 +20,15 @@ export class OpenAICompatibleBackend {
    * @param {string} config.id - 后端标识
    * @param {string} config.baseUrl - 上游 API base URL
    * @param {string} config.apiKey - Provider 服务节点的模型访问 API key
-   * @param {number} [config.timeoutMs=60000] - 请求超时
+   * @param {number} [config.timeoutMs=300000] - 请求超时
    * @param {Object} [config.defaultHeaders] - 额外的默认请求头
    */
   constructor(config) {
     this.id = config.id;
     this.baseUrl = config.baseUrl.replace(/\/$/, "");
     this.apiKey = config.apiKey;
-    this.timeoutMs = config.timeoutMs ?? 60000;
+    this.timeoutMs = config.timeoutMs ?? DEFAULT_UPSTREAM_TIMEOUT_MS;
+    this.logTimings = config.logTimings ?? true;
     this.defaultHeaders = config.defaultHeaders ?? {};
     this.messageFormat = config.messageFormat ?? "openai_chat_completions";
     this.includeStreamUsage = config.includeStreamUsage !== false;
@@ -168,7 +170,11 @@ export class OpenAICompatibleBackend {
     const rawChunks = [];
 
     while (true) {
-      const { value, done } = await reader.read();
+      const { value, done } = await readTimedStreamChunk(reader, response, {
+        upstreamId: this.id,
+        timeoutMs: this.timeoutMs,
+        logTimings: this.logTimings,
+      });
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
       const frames = buffer.split(/\r?\n\r?\n/);
@@ -302,35 +308,21 @@ export class OpenAICompatibleBackend {
    */
   async _fetch(path, options = {}) {
     const url = `${this.baseUrl}${path}`;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
-
-    try {
-      const response = await fetch(url, {
+    return timedFetch({
+      upstreamId: this.id,
+      url,
+      timeoutMs: this.timeoutMs,
+      logTimings: this.logTimings,
+      options: {
         ...options,
-        signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${this.apiKey}`,
           ...this.defaultHeaders,
           ...(options.headers ?? {}),
         },
-      });
-      return response;
-    } catch (error) {
-      if (error.name === "AbortError") {
-        throw new UpstreamBackendError(
-          `Upstream ${this.id} timed out after ${this.timeoutMs}ms`,
-          { code: "upstream_timeout" },
-        );
-      }
-      throw new UpstreamBackendError(
-        `Upstream ${this.id} request failed: ${error.message}`,
-        { code: "upstream_network_error" },
-      );
-    } finally {
-      clearTimeout(timeout);
-    }
+      },
+    });
   }
 
   /**
