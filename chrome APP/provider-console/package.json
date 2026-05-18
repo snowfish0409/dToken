@@ -1,0 +1,11 @@
+{
+  "name": "dtoken-provider-chrome-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "bash scripts/start-provider-chrome-app.sh",
+    "start:detached": "DTOKEN_DETACH=1 bash scripts/start-provider-chrome-app.sh",
+    "stop": "bash scripts/stop-provider-chrome-app.sh",
+    "check": "node -e \"const fs=require('fs'); for (const f of ['deploy/index.html','deploy/mainnet-dtoken-v0.json','deploy/vendor/ethers.umd.min.js']) { if (!fs.existsSync(f)) throw new Error('missing '+f); } console.log('provider chrome app assets ok');\""
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "dtoken-user-chrome-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bash scripts/start-chrome-app.sh",
+    "start:detached": "DTOKEN_DETACH=1 bash scripts/start-chrome-app.sh",
+    "stop": "bash scripts/stop-chrome-app.sh",
+    "gateway": "node apps/dtoken-agent-gateway/src/server.js",
+    "check": "node --check apps/dtoken-agent-gateway/src/server.js"
+  },
+  "dependencies": {
+    "ethers": "^6.16.0"
+  }
+}

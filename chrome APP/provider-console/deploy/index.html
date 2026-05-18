@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dToken Provider Console</title>
+  <script src="vendor/ethers.umd.min.js"></script>
+  <style>
+    :root {
+      --blue-light:#DBE9F7; --blue-dark:#2E4A7D; --brown-light:#F1E3D2; --brown-dark:#3E2723; --white-soft:#FAF9F6;
+      --bg:var(--blue-dark); --surface:rgba(250,249,246,0.92); --surface2:rgba(250,249,246,0.96); --surface3:rgba(219,233,247,0.82);
+      --border:rgba(62,39,35,0.10); --border-strong:rgba(62,39,35,0.30);
+      --text:var(--brown-dark); --text2:rgba(62,39,35,0.70); --accent:var(--brown-dark); --accent2:var(--brown-dark); --content-soft:rgba(250,249,246,0.62);
+      --font-ui:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI','Inter','Noto Sans SC','PingFang SC','Microsoft YaHei',Arial,sans-serif;
+      --font-mono:'SF Mono','Cascadia Mono','Fira Code',Menlo,Consolas,monospace;
+      --shadow-sm:0 1px 2px rgba(46,74,125,0.08),0 10px 28px rgba(46,74,125,0.12);
+      --shadow-md:0 18px 46px rgba(46,74,125,0.22);
+      --radius: 8px; --radius-lg: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { min-height: 100%; background: linear-gradient(135deg,var(--blue-dark) 0%,var(--blue-dark) 48%,var(--blue-light) 100%); }
+    body {
+      font-family: var(--font-ui);
+      background: linear-gradient(135deg,var(--blue-dark) 0%,var(--blue-dark) 48%,var(--blue-light) 100%);
+      color: var(--text); line-height: 1.5; min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    button,input,select,textarea { font-family: var(--font-ui); letter-spacing: 0; }
+    #topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 22px; background: rgba(250,249,246,0.92); border-bottom: 1px solid rgba(250,249,246,0.48);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      box-shadow: 0 1px 0 rgba(62,39,35,0.05);
+      position: sticky; top: 0; z-index: 100; gap: 12px; flex-wrap: wrap;
+    }
+    #topbar .logo { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    #topbar .logo .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--brown-dark); box-shadow: inset 0 0 0 4px var(--brown-light),0 0 0 1px rgba(62,39,35,0.18); flex-shrink: 0; }
+    #topbar .logo .dot.off { background: rgba(62,39,35,0.30); }
+    #topbar .logo .accent { color: var(--accent); }
+    #topbar .right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 34px; }
+    .tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+      line-height: 16px; min-height: 24px;
+      border: 1px solid rgba(62,39,35,0.08);
+    }
+    .tag.ok { background: rgba(62,39,35,0.12); color: var(--brown-dark); }
+    .tag.warn { background: rgba(62,39,35,0.16); color: var(--brown-dark); }
+    .tag.bad { background: rgba(62,39,35,0.12); color: var(--brown-dark); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 8px 14px;
+      border-radius: var(--radius); font-size: 12px; font-weight: 650; line-height: 16px; min-height: 32px;
+      cursor: pointer; border: 1px solid rgba(62,39,35,0.08); background: rgba(250,249,246,0.68);
+      color: var(--text); transition: background 0.15s,border-color 0.15s,color 0.15s,box-shadow 0.15s,transform 0.15s; white-space: nowrap;
+      font-family: var(--font-ui);
+    }
+    .btn:hover:not(:disabled) { border-color: rgba(62,39,35,0.30); color: var(--accent); background: rgba(250,249,246,0.54); transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .btn-primary { background: var(--brown-dark); color: var(--brown-light); border-color: var(--brown-dark); box-shadow: 0 10px 22px rgba(62,39,35,0.18); }
+    .btn-primary:hover:not(:disabled) { background: var(--brown-dark); color: var(--brown-light); }
+    .btn-green { background: var(--brown-dark); color: var(--brown-light); border-color: var(--brown-dark); }
+    .btn-green:hover:not(:disabled) { background: var(--brown-dark); color: var(--brown-light); }
+    .btn-red { background: var(--brown-dark); color: var(--brown-light); border-color: var(--brown-dark); }
+    .btn-red:hover:not(:disabled) { background: var(--brown-dark); color: var(--brown-light); }
+    .btn-sm { padding: 4px 10px; font-size: 11px; }
+    .btn-lg { padding: 10px 24px; font-size: 14px; }
+    .btn-lang { background: transparent; border-color: transparent; font-size: 12px; padding: 5px 9px; min-width: 34px; font-weight: 760; }
+    .btn-lang:hover { color: var(--accent); }
+    .hidden { display: none !important; }
+    .wallet-wrap { position: relative; }
+    .wallet-menu {
+      position: absolute; top: calc(100% + 8px); right: 0; width: 230px; padding: 8px;
+      background: rgba(250,249,246,0.98); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow-md); z-index: 300;
+    }
+    .wallet-choice {
+      width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      padding: 10px; border: 1px solid transparent; border-radius: var(--radius);
+      background: transparent; color: var(--text); cursor: pointer; text-align: left; font-size: 12px; line-height: 16px; font-family: var(--font-ui);
+    }
+    .wallet-choice:hover:not(:disabled) { background: var(--surface3); border-color: var(--border-strong); }
+    .wallet-choice:disabled { opacity: 0.42; cursor: not-allowed; }
+    .wallet-choice small { color: var(--text2); font-size: 10px; }
+
+    #main { max-width: 1120px; margin: 0 auto; padding: 24px; }
+    #tabs { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid rgba(250,249,246,0.22); flex-wrap: wrap; }
+    #tabs button {
+      padding: 10px 16px; font-size: 13px; font-weight: 650; cursor: pointer;
+      color: var(--text2); border: 1px solid transparent; background: transparent;
+      border-bottom: 2px solid transparent; border-radius: var(--radius) var(--radius) 0 0; transition: all 0.15s;
+      line-height: 17px; min-height: 40px; font-family: var(--font-ui);
+    }
+    #tabs button:hover { color: var(--text); background: rgba(250,249,246,0.50); }
+    #tabs button.active { color: var(--brown-dark); border-color: rgba(62,39,35,0.24); border-bottom-color: var(--accent); background: rgba(250,249,246,0.48); }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .card {
+      background: rgba(250,249,246,0.90); border: 1px solid rgba(250,249,246,0.56); border-radius: var(--radius-lg);
+      padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow-sm);
+    }
+    .card-header {
+      font-size: 14px; font-weight: 700; margin-bottom: 12px; display: flex;
+      align-items: center; justify-content: space-between;
+    }
+    .badge {
+      font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;
+    }
+    .badge.green { background: rgba(62,39,35,0.12); color: var(--brown-dark); }
+    .badge.blue { background: rgba(62,39,35,0.16); color: var(--accent); }
+    .badge.orange { background: rgba(62,39,35,0.16); color: var(--brown-dark); }
+    .badge.red { background: rgba(62,39,35,0.12); color: var(--brown-dark); }
+
+    .form-group { margin-bottom: 12px; }
+    .form-group label {
+      display: block; font-size: 11px; font-weight: 600; color: var(--text2);
+      text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px; line-height: 15px; min-height: 15px;
+    }
+    .form-group input, .form-group select {
+      width: 100%; padding: 8px 10px; border-radius: var(--radius);
+      border: 1px solid rgba(62,39,35,0.10); background: rgba(250,249,246,0.90); color: var(--text);
+      font-size: 13px; font-family: var(--font-mono); line-height: 17px;
+      outline: none; transition: border-color 0.15s,box-shadow 0.15s; box-shadow: inset 0 1px 0 rgba(250,249,246,0.42);
+    }
+    .form-group input:focus, .form-group select:focus { border-color: rgba(62,39,35,0.58); box-shadow: 0 0 0 3px rgba(62,39,35,0.18); }
+    .form-group select { cursor: pointer; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-hint { font-size: 11px; color: var(--text2); margin-top: 3px; }
+    .price-box {
+      margin: 2px 0 12px; padding: 10px 12px; border-radius: var(--radius);
+      border: 1px solid rgba(62,39,35,0.08); background: rgba(250,249,246,0.62);
+      display: grid; gap: 5px; font-size: 11px; color: var(--text2);
+    }
+    .price-box .price-line { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+    .price-box strong { color: var(--brown-dark); font-family: var(--font-mono); font-size: 11px; text-align: right; }
+    .price-box .price-muted { color: rgba(62,39,35,0.48); font-size: 10px; }
+    .price-mini { color: var(--text2); font-size: 10px; margin-top: 2px; }
+
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 16px; }
+    .info-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
+    .info-row .k { color: var(--text2); flex-shrink: 0; margin-right: 12px; }
+    .info-row .v { font-family: var(--font-mono); font-size: 11px; text-align: right; word-break: break-all; }
+    .v.green { color: var(--brown-dark); }
+    .v.accent { color: var(--accent); }
+    .v.orange { color: var(--brown-dark); }
+
+    .list { display: flex; flex-direction: column; gap: 8px; }
+    .row {
+      border: 1px solid rgba(62,39,35,0.08); border-radius: var(--radius); padding: 12px;
+      background: rgba(250,249,246,0.92); transition: border-color 0.15s,box-shadow 0.15s,transform 0.15s; box-shadow: var(--shadow-sm);
+    }
+    .row:hover { border-color: rgba(62,39,35,0.28); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .row .row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .row .row-id { font-family: var(--font-mono); font-size: 11px; color: var(--accent); }
+    .row .row-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 14px; font-size: 11px; }
+    .row .row-meta span { color: var(--text2); }
+    .row .row-act { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .update-box {
+      margin-top: 14px; padding: 14px; border: 1px solid rgba(62,39,35,0.14);
+      border-radius: var(--radius); background: rgba(219,233,247,0.34);
+      box-shadow: inset 0 1px 0 rgba(250,249,246,0.52);
+    }
+    .update-box input[readonly] { color: var(--text2); background: rgba(250,249,246,0.58); }
+
+    .toolbar {
+      display: grid; grid-template-columns: minmax(260px,1fr) 180px auto; gap: 10px;
+      align-items: end; margin-bottom: 12px;
+    }
+    .toolbar .form-group { margin-bottom: 0; }
+    .service-section { margin-top: 14px; }
+    .service-section:first-of-type { margin-top: 0; }
+    .section-title {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin: 6px 0 8px; font-size: 12px; font-weight: 750; color: var(--text);
+    }
+    .section-title small { color: var(--text2); font-weight: 600; }
+    .meta-grid { display:grid; grid-template-columns:auto 1fr; gap:2px 12px; font-size:11px; }
+    .meta-k { color: var(--text2); }
+    .meta-v { font-family: var(--font-mono); text-align: right; word-break: break-all; }
+
+    .empty { text-align: center; padding: 28px 14px; color: var(--text2); font-size: 12px; }
+
+    #mmWarning {
+      display: none; margin-bottom: 16px; border: 1px solid var(--brown-dark); border-radius: var(--radius-lg);
+      background: rgba(250,249,246,0.92); padding: 14px 18px; font-size: 13px; line-height: 1.7;
+      box-shadow: var(--shadow-sm);
+    }
+    #mmWarning code { background: var(--surface2); padding: 2px 6px; border-radius: 3px; font-size: 12px; }
+
+    #toast {
+      position: fixed; bottom: 20px; right: 20px; z-index: 999;
+      display: flex; flex-direction: column; gap: 7px; max-width: 380px;
+    }
+    .toast-msg {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 10px 14px; font-size: 12px; animation: slideIn 0.2s ease;
+      box-shadow: var(--shadow-md);
+    }
+    .toast-msg.ok { border-left: 3px solid var(--brown-dark); }
+    .toast-msg.err { border-left: 3px solid var(--brown-dark); }
+    .toast-msg.nfo { border-left: 3px solid var(--accent); }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+    .spin {
+      display: inline-block; width: 14px; height: 14px; border: 2px solid var(--text2);
+      border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 700px) {
+      .form-row { grid-template-columns: 1fr; }
+      .toolbar { grid-template-columns: 1fr; }
+      .info-grid { grid-template-columns: 1fr; }
+      .row .row-meta { grid-template-columns: 1fr; }
+      #topbar { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="logo">
+    <div class="dot off" id="connDot"></div>
+    <span>dToken</span> <span class="accent" data-i18n="title">Provider Console</span>
+  </div>
+  <div class="right">
+    <span class="tag ok" id="contractTag" title="dToken V5">V5</span>
+    <span class="tag" id="netTag">Mainnet</span>
+    <span style="font-size:11px;color:var(--text2)" id="addrDisp" data-i18n="notConnected">Not connected</span>
+    <span id="balDisp" style="font-size:11px;font-weight:600;display:none"></span>
+    <div class="wallet-wrap">
+      <button class="btn btn-primary" id="connBtn" onclick="openWalletMenu()" data-i18n="connectWallet">Connect Wallet</button>
+      <div id="walletMenu" class="wallet-menu hidden">
+        <button class="wallet-choice" data-wallet="metamask" onclick="doConnect('metamask')"><span>MetaMask</span><small data-i18n="walletUnavailable">Not detected</small></button>
+        <button class="wallet-choice" data-wallet="okx" onclick="doConnect('okx')"><span>OKX Web3</span><small data-i18n="walletUnavailable">Not detected</small></button>
+        <button class="wallet-choice" data-wallet="phantom" onclick="doConnect('phantom')"><span>Phantom</span><small data-i18n="walletUnavailable">Not detected</small></button>
+      </div>
+    </div>
+    <button class="btn hidden" id="discBtn" onclick="disconnectWallet()" data-i18n="disconnectWallet">Disconnect</button>
+    <button class="btn btn-lang" id="langBtn" onclick="toggleLang()" data-i18n-title="languageSwitch" title="Switch language">EN</button>
+  </div>
+</div>
+
+<div id="mmWarning">
+  <strong data-i18n="mmTitle">MetaMask Not Detected</strong>
+  <p data-i18n-html="mmBody"></p>
+  <p style="margin-top:8px"><button class="btn btn-sm" onclick="checkMetaMask()" data-i18n="mmRetry">Retry Detection</button></p>
+</div>
+
+<div id="main">
+  <div id="tabs">
+    <button class="tab active" data-tab="register" data-i18n="tabRegister">1. Register</button>
+    <button class="tab" data-tab="models" data-i18n="tabModels">2. Models</button>
+    <button class="tab" data-tab="services" data-i18n="tabServices">3. Services</button>
+  </div>
+
+  <!-- ══ Panel 1: Register ══ -->
+  <div class="panel active" id="panel-register">
+    <div class="card">
+      <div class="card-header">
+        <span data-i18n="regTitle">Provider Registration</span>
+        <span class="badge blue" id="regBadge" data-i18n="regBadgeFill">Fill &amp; Submit</span>
+      </div>
+      <input type="hidden" id="f_signer">
+      <input type="hidden" id="f_idleTmo" value="3600">
+      <input type="hidden" id="f_metaURI">
+      <input type="hidden" id="f_ctxLen" value="0">
+      <div class="form-row">
+        <div class="form-group">
+          <label data-i18n="regModelId">Model ID</label>
+          <input type="text" id="f_modelId" placeholder="qwen2.5-coder-32b">
+        </div>
+        <div class="form-group">
+          <label data-i18n="regModelName">Model Display Name</label>
+          <input type="text" id="f_modelName" placeholder="Qwen Coder 32B">
+        </div>
+      </div>
+      <div class="form-group">
+        <label data-i18n="regEndpoint">Public API Endpoint (Base URL)</label>
+        <input type="text" id="f_endpoint" placeholder="https://your-provider.example.com/v1">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label data-i18n="regInputPrice">Input Token Price (dToken)</label>
+          <input type="number" id="f_inputPrice" value="1" min="0" step="any" oninput="renderPriceEstimate()">
+        </div>
+        <div class="form-group">
+          <label data-i18n="regOutputPrice">Output Token Price (dToken)</label>
+          <input type="number" id="f_outputPrice" value="2" min="0" step="any" oninput="renderPriceEstimate()">
+        </div>
+      </div>
+      <div class="price-box" id="priceBox">
+        <div class="price-line"><span data-i18n="poolPrice">Pool price</span><strong id="dtEthPrice">—</strong></div>
+        <div class="price-line"><span data-i18n="modelUsdEstimate">Model USD estimate</span><strong id="modelUsdEstimate">—</strong></div>
+        <div class="price-muted" id="priceSource">—</div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label data-i18n="regMinEscrow">Minimum Escrow (dToken)</label>
+          <input type="number" id="f_minEscrow" value="50000" min="0" step="any" oninput="renderPriceEstimate()">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-lg" id="btnAnnounce" onclick="doAnnounce()" disabled data-i18n="regBtnAnnounce">Announce on Ethereum</button>
+        <button class="btn btn-lg" id="btnUpdate" onclick="doAnnounce()" disabled style="display:none;" data-i18n="regBtnUpdate">Update Registration</button>
+      </div>
+      <div id="regResult" style="margin-top:10px;font-size:12px;"></div>
+    </div>
+  </div>
+
+  <!-- ══ Panel 2: On-chain Models ══ -->
+  <div class="panel" id="panel-models">
+    <div class="card">
+      <div class="card-header">
+        <span data-i18n="modelsTitle">On-chain Models</span>
+        <button class="btn btn-sm" onclick="refreshProvider()" data-i18n="modelsRefresh">Refresh</button>
+      </div>
+      <div class="toolbar">
+        <div class="form-group">
+          <label data-i18n="modelsSearchAddress">Provider Wallet</label>
+          <input type="text" id="modelSearchAddr" placeholder="0x..." spellcheck="false">
+        </div>
+        <div class="form-group">
+          <label data-i18n="modelsLookback">Past Blocks</label>
+          <input type="number" id="modelLookback" min="10" step="100" value="5000">
+        </div>
+        <button class="btn" onclick="refreshProvider()" data-i18n="modelsRead">Read</button>
+      </div>
+      <div id="modelSummary" style="font-size:11px;color:var(--text2);margin-bottom:10px;"></div>
+      <div id="chainModelList" class="list"><div class="empty" data-i18n="modelsEmpty">Connect wallet to view on-chain models.</div></div>
+      <div id="modelUpdateBox" class="update-box hidden">
+        <div class="section-title">
+          <span data-i18n="modelUpdateTitle">Update selected model</span>
+          <small id="modelUpdateTarget">-</small>
+        </div>
+        <div class="form-hint" style="margin-bottom:10px" data-i18n="modelUpdateHint">Select one on-chain model here, then update only that model declaration.</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label data-i18n="regModelId">Model ID</label>
+            <input type="text" id="u_modelId" readonly>
+          </div>
+          <div class="form-group">
+            <label data-i18n="regModelName">Model Display Name</label>
+            <input type="text" id="u_modelName">
+          </div>
+        </div>
+        <div class="form-group">
+          <label data-i18n="regEndpoint">Public API Endpoint (Base URL)</label>
+          <input type="text" id="u_endpoint">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label data-i18n="regInputPrice">Input Token Price (dToken)</label>
+            <input type="number" id="u_inputPrice" min="0" step="any">
+          </div>
+          <div class="form-group">
+            <label data-i18n="regOutputPrice">Output Token Price (dToken)</label>
+            <input type="number" id="u_outputPrice" min="0" step="any">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label data-i18n="regMinEscrow">Minimum Escrow (dToken)</label>
+            <input type="number" id="u_minEscrow" min="0" step="any">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="btnModelUpdate" onclick="doUpdateModel()" data-i18n="modelUpdateBtn">Update model declaration</button>
+          <button class="btn" onclick="clearModelUpdate()" data-i18n="modelUpdateCancel">Cancel</button>
+        </div>
+        <div id="modelUpdateResult" style="margin-top:10px;font-size:12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Panel 3: My dToken Services ══ -->
+  <div class="panel" id="panel-services">
+    <div class="card">
+      <div class="card-header">
+        <span data-i18n="svcTitle">My dToken Services</span>
+        <button class="btn btn-sm" onclick="loadServices()" data-i18n="svcRefresh">Refresh</button>
+      </div>
+      <div id="svcSummary" style="font-size:11px;color:var(--text2);margin-bottom:10px;"></div>
+      <div class="list" id="svcList"><div class="empty" data-i18n="svcEmpty">Connect wallet and register as Provider first.</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// dToken Provider Console — Mainnet V0, i18n edition
+// ═══════════════════════════════════════════════════
+
+let CONTRACT_ADDR = "0xc706bd1f6F1457A8953241aF64F93bd5406d751B";
+let TOKEN_ADDR = "0x28219c4417d6095C66a04940D84cba13075b768b";
+let DTOKEN_DECIMALS = 18;
+let PROTOCOL_VERSION_LABEL = "V0";
+const CHAIN_ID = 1n;
+const MAINNET_ADD_RPC = "https://cloudflare-eth.com";
+const WETH_ADDR = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+const UNI_V3_FACTORY = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
+const DTOKEN_WETH_FEE = 10000;
+const DTOKEN_WETH_FEES = [10000, 3000, 500, 100];
+const ZERO = "0x0000000000000000000000000000000000000000000000000000000000000000";
+const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
+const PROVIDER_EVENT_LOOKBACK = 5000;
+const PROVIDER_EVENT_CHUNK = 1000;
+let ABI = null;
+let TOKEN_ABI = null;
+let dtokenPrice = { loaded:false, loading:false, error:'', pool:null, fee:DTOKEN_WETH_FEE, ethPerDtoken:0, dtokenPerEth:0, ethUsd:0, dtokenUsd:0, updatedAt:0 };
+async function loadABI() {
+  if (ABI) return ABI;
+  const files = ['mainnet-dtoken-v0.json'];
+  let lastErr = null;
+  for (const file of files) {
+    try {
+      const res = await fetch(file, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Cannot load ${file}`);
+      const data = await res.json();
+      CONTRACT_ADDR = data.protocol_address || data.proxy_address || data.contract_address || CONTRACT_ADDR;
+      TOKEN_ADDR = data.token_address || data.dtoken_token_address || data.erc20_address || TOKEN_ADDR || CONTRACT_ADDR;
+      DTOKEN_DECIMALS = Number(data.decimals ?? DTOKEN_DECIMALS);
+      PROTOCOL_VERSION_LABEL = data.protocol_version ? `V${data.protocol_version}` : PROTOCOL_VERSION_LABEL;
+      updateContractTag();
+      ABI = data.protocol_abi || data.abi;
+      TOKEN_ABI = data.token_abi || null;
+      return ABI;
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('Cannot load dToken deployment');
+}
+function updateContractTag() {
+  const el = document.getElementById('contractTag');
+  if (!el) return;
+  el.textContent = `${PROTOCOL_VERSION_LABEL} · ${short(CONTRACT_ADDR)}`;
+  el.title = `dToken Protocol: ${CONTRACT_ADDR}\ndToken ERC20: ${TOKEN_ADDR}`;
+}
+// ═════════════════ i18n ═════════════════
+const I18N = {
+  zh: {
+    title:"Provider Console",
+    notConnected:"未连接",
+    connectWallet:"连接钱包",
+    disconnectWallet:"退出钱包",
+    connectedWallet:"已连接 {0}",
+    langButton:"EN",
+    languageSwitch:"Switch to English",
+    walletUnavailable:"未检测到",
+    walletAvailable:"可连接",
+
+    mmTitle:"未检测到可用 EVM 钱包",
+    mmBody:"请通过本地 HTTP 服务打开此页面，并确认 MetaMask、OKX Web3 或 Phantom 等 EVM 钱包扩展已启用并解锁：<br><code>cd provider-console && python3 -m http.server 8792</code><br>然后访问 <code>http://127.0.0.1:8792/</code>。",
+    mmRetry:"重新检测",
+
+    tabRegister:"1. 注册模型",
+    tabModels:"2. 链上模型",
+    tabServices:"3. 牵手服务",
+
+    regTitle:"注册模型",
+    regBadgeFill:"填写并提交",
+    regModelId:"Model ID",
+    regModelName:"Model 展示名称",
+    regEndpoint:"对外 API Endpoint (Base URL)",
+    regInputPrice:"Input Token 价格 (dToken / token)",
+    regOutputPrice:"Output Token 价格 (dToken / token)",
+    regMinEscrow:"最小托管 (dToken)",
+    poolPrice:"池子价格",
+    modelUsdEstimate:"模型价格估算",
+    priceLoading:"读取 dToken/WETH 池子中...",
+    priceUnavailable:"价格暂不可用",
+    priceSource:"Ethereum Mainnet Uniswap V3 · active pool",
+    priceSourceUsd:"Ethereum Mainnet Uniswap V3 + ETH/USD 参考价",
+    usdUnavailable:"USD 暂无报价",
+    perMillionTokens:"每 1M tokens：Input {0} / Output {1}",
+    minEscrowValue:"最小托管约 {0} ETH · {1}",
+    regContext:"Context 长度",
+    regBtnAnnounce:"上链声明",
+    regBtnUpdate:"更新声明",
+    regBtnDeact:"下架",
+    regExistingUseModels:"这个 Model ID 已经存在。新增模型请更换 Model ID；更新已有模型请到「链上模型」页选择后更新。",
+
+    modelsTitle:"链上模型",
+    modelsRefresh:"刷新",
+    modelsSearchAddress:"Provider 钱包",
+    modelsLookback:"过去区块",
+    modelsRead:"读取",
+    modelsEmpty:"连接钱包后使用钱包 RPC 读取链上模型声明。",
+    modelsNone:"所选地址在当前区块范围内没有模型声明。",
+    modelsSummary:"扫描 {0} → {1} · 共 {2} 个模型声明",
+    modelsBadAddress:"请输入有效 Provider 钱包地址",
+    modelEdit:"更新",
+    modelDeactivate:"一键下架",
+    modelInactive:"已下架",
+    modelUpdateTitle:"更新选中模型",
+    modelUpdateHint:"注册页只用于新增模型；这里会针对你在本页选中的链上模型重新发布最新声明。",
+    modelUpdateBtn:"更新模型声明",
+    modelUpdateCancel:"取消",
+    modelUpdateEmpty:"请先在链上模型列表中选择一个模型。",
+    modelUpdateOwnOnly:"只能更新当前连接钱包自己的模型。",
+    confirmDeactivate:"确定下架模型 {0} 吗？确认后会发起链上交易。",
+    statusActive:"可用",
+    statusInactive:"已下架",
+    modelEndpoint:"端点",
+    modelInput:"Input",
+    modelOutput:"Output",
+    modelMinEscrow:"最小托管",
+    tokenUnit:"token",
+
+    svcTitle:"牵手服务",
+    svcRefresh:"刷新",
+    svcEmpty:"请先连接 Provider 钱包。",
+    svcNone:"当前钱包暂无牵手服务。",
+    svcOpenTitle:"未结算牵手",
+    svcClosedTitle:"已结算牵手",
+    svcOpenHint:"未结算牵手只展示链上可直接读取的信息；实时消耗在结算前不作为可验证链上状态展示。",
+    svcClosedHint:"已结算牵手展示最终链上结算结果。",
+    svcStatusOpen:"进行中",
+    svcStatusPendingAccept:"等待接入",
+    svcStatusPending:"待退出",
+    svcStatusSettled:"已结算",
+    svcStatusCancelled:"已取消",
+    svcStatusNone:"未知",
+    svcUser:"User",
+    svcProvider:"Provider",
+    svcSessionSigner:"User 会话签名",
+    svcServiceSigner:"服务签名",
+    svcModel:"模型",
+    svcEndpoint:"端点",
+    svcEscrow:"托管",
+    svcProviderAmount:"Provider 获得",
+    svcUserRefund:"User 退回",
+    svcPendingClose:"退出申报",
+    svcChallengeDeadline:"Challenge 截止",
+    svcOpenedAt:"创建时间",
+    svcAcceptedAt:"接入时间",
+    svcIdleDeadline:"Idle 截止",
+    svcCredential:"最终凭证",
+    svcMetering:"Metering",
+    svcRound:"轮次",
+    svcSummary:"共 {0} 条 · 未结算: {1} · 已结算/结束: {2}",
+
+    txSent:"交易已发送",
+    txConfirmed:"交易已确认",
+    txFailed:"交易失败",
+    waiting:"等待确认...",
+    block:"区块",
+    connectFirst:"请先连接钱包",
+    deactivating:"下架中...",
+    announceDone:"Provider 已上链声明",
+    deactDone:"Provider 已下架",
+    settled:"已结算",
+    cancelled:"已取消",
+    accepted:"已确认",
+    copy:"复制",
+    fillRequired:"请填写必填字段",
+    invalidSigner:"无效的 Provider 钱包地址",
+    errProviderInactive:"Provider 不可用",
+    errHandshakeNotFound:"牵手不存在",
+    errHandshakeNotOpen:"牵手不是 Open 状态",
+    errInvalidSignature:"签名无效",
+    errBudgetExceeded:"超出托管额度",
+    errUnauthorized:"无权限",
+    errInvalidAmount:"金额无效",
+    errZeroAddress:"零地址无效",
+    errNoConfirmedCredential:"没有已确认凭证",
+    errNonMonotonicSpend:"消费金额未递增",
+    errIdleCancelNotReady:"无法取消：已有使用记录",
+    errChallengeStillActive:"挑战期仍未结束",
+    errInvalidStatus:"状态无效",
+  },
+  en: {
+    title:"Provider Console",
+    notConnected:"Not connected",
+    connectWallet:"Connect Wallet",
+    disconnectWallet:"Disconnect",
+    connectedWallet:"Connected {0}",
+    langButton:"中",
+    languageSwitch:"切换到中文",
+    walletUnavailable:"Not detected",
+    walletAvailable:"Available",
+
+    mmTitle:"No EVM wallet detected",
+    mmBody:"Serve this file via a local HTTP server and make sure MetaMask, OKX Web3, or Phantom is enabled and unlocked:<br><code>cd provider-console && python3 -m http.server 8792</code><br>Then visit <code>http://127.0.0.1:8792/</code>.",
+    mmRetry:"Retry Detection",
+
+    tabRegister:"1. Register Model",
+    tabModels:"2. On-chain Models",
+    tabServices:"3. Handshakes",
+
+    regTitle:"Register Model",
+    regBadgeFill:"Fill & Submit",
+    regModelId:"Model ID",
+    regModelName:"Model Display Name",
+    regEndpoint:"Public API Endpoint (Base URL)",
+    regInputPrice:"Input Token Price (dToken / token)",
+    regOutputPrice:"Output Token Price (dToken / token)",
+    regMinEscrow:"Minimum Escrow (dToken)",
+    poolPrice:"Pool price",
+    modelUsdEstimate:"Model price estimate",
+    priceLoading:"Reading dToken/WETH pool...",
+    priceUnavailable:"Price unavailable",
+    priceSource:"Ethereum Mainnet Uniswap V3 · active pool",
+    priceSourceUsd:"Ethereum Mainnet Uniswap V3 + ETH/USD reference",
+    usdUnavailable:"USD unavailable",
+    perMillionTokens:"Per 1M tokens: input {0} / output {1}",
+    minEscrowValue:"Minimum escrow about {0} ETH · {1}",
+    regContext:"Context Length",
+    regBtnAnnounce:"Announce on Ethereum",
+    regBtnUpdate:"Update Registration",
+    regBtnDeact:"Deactivate",
+    regExistingUseModels:"This Model ID already exists. Use a new Model ID for registration, or update it from the On-chain Models page.",
+
+    modelsTitle:"On-chain Models",
+    modelsRefresh:"Refresh",
+    modelsSearchAddress:"Provider Wallet",
+    modelsLookback:"Past Blocks",
+    modelsRead:"Read",
+    modelsEmpty:"Connect wallet to read on-chain model announcements through wallet RPC.",
+    modelsNone:"No model announcement from this address in the selected block range.",
+    modelsSummary:"Scanned {0} → {1} · {2} model declarations",
+    modelsBadAddress:"Enter a valid Provider wallet address",
+    modelEdit:"Update",
+    modelDeactivate:"Deactivate",
+    modelInactive:"Inactive",
+    modelUpdateTitle:"Update Selected Model",
+    modelUpdateHint:"The register page is only for new models. This panel republishes the selected on-chain model declaration.",
+    modelUpdateBtn:"Update model declaration",
+    modelUpdateCancel:"Cancel",
+    modelUpdateEmpty:"Select a model from the on-chain model list first.",
+    modelUpdateOwnOnly:"Only the currently connected Provider wallet can update its own model.",
+    confirmDeactivate:"Deactivate model {0}? This will send an on-chain transaction.",
+    statusActive:"Active",
+    statusInactive:"Inactive",
+    modelEndpoint:"Endpoint",
+    modelInput:"Input",
+    modelOutput:"Output",
+    modelMinEscrow:"Min escrow",
+    tokenUnit:"token",
+
+    svcTitle:"Handshake Services",
+    svcRefresh:"Refresh",
+    svcEmpty:"Connect the Provider wallet first.",
+    svcNone:"No handshake services for this wallet.",
+    svcOpenTitle:"Unsettled Handshakes",
+    svcClosedTitle:"Settled Handshakes",
+    svcOpenHint:"Unsettled handshakes only show directly readable on-chain data; live usage is not presented as verified on-chain state until settlement.",
+    svcClosedHint:"Settled handshakes show the final on-chain settlement.",
+    svcStatusOpen:"Active",
+    svcStatusPendingAccept:"Pending Accept",
+    svcStatusPending:"Pending Exit",
+    svcStatusSettled:"Settled",
+    svcStatusCancelled:"Cancelled",
+    svcStatusNone:"Unknown",
+    svcUser:"User",
+    svcProvider:"Provider",
+    svcSessionSigner:"User Session Signer",
+    svcServiceSigner:"Service Signer",
+    svcModel:"Model",
+    svcEndpoint:"Endpoint",
+    svcEscrow:"Escrow",
+    svcProviderAmount:"Provider Amount",
+    svcUserRefund:"User Refund",
+    svcPendingClose:"Exit Claim",
+    svcChallengeDeadline:"Challenge Deadline",
+    svcOpenedAt:"Opened At",
+    svcAcceptedAt:"Accepted At",
+    svcIdleDeadline:"Idle Deadline",
+    svcCredential:"Final Credential",
+    svcMetering:"Metering",
+    svcRound:"Round",
+    svcSummary:"{0} records · Unsettled: {1} · Settled/Closed: {2}",
+
+    txSent:"Transaction sent",
+    txConfirmed:"Transaction confirmed",
+    txFailed:"Transaction failed",
+    waiting:"Waiting for confirmation...",
+    block:"Block",
+    connectFirst:"Please connect wallet first",
+    deactivating:"Deactivating...",
+    announceDone:"Provider announced on-chain",
+    deactDone:"Provider deactivated",
+    settled:"Settled",
+    cancelled:"Cancelled",
+    accepted:"Accepted",
+    copy:"Copy",
+    fillRequired:"Please fill in required fields",
+    invalidSigner:"Invalid provider wallet address",
+    errProviderInactive:"Provider not active",
+    errHandshakeNotFound:"Handshake not found",
+    errHandshakeNotOpen:"Not in Open status",
+    errInvalidSignature:"Invalid signature",
+    errBudgetExceeded:"Exceeds escrow",
+    errUnauthorized:"Not authorized",
+    errInvalidAmount:"Invalid amount",
+    errZeroAddress:"Zero address",
+    errNoConfirmedCredential:"No confirmed credential",
+    errNonMonotonicSpend:"Spend not monotonic",
+    errIdleCancelNotReady:"Cannot cancel: usage exists",
+    errChallengeStillActive:"Challenge period active",
+    errInvalidStatus:"Invalid status",
+  }
+};
+
+const LANG_SK = 'dtoken_provider_console_lang';
+let lang = (() => {
+  try {
+    const saved = localStorage.getItem(LANG_SK);
+    if (saved === 'zh' || saved === 'en') return saved;
+  } catch {}
+  return navigator.language && navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+})();
+function t(key) { return I18N[lang]?.[key] ?? I18N['en']?.[key] ?? key; }
+function tf(key, ...args) {
+  let s = t(key);
+  for (let i = 0; i < args.length; i++) s = s.replace(`{${i}}`, args[i]);
+  return s;
+}
+function applyI18n({ refresh = false } = {}) {
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  const langBtn = document.getElementById('langBtn');
+  if (langBtn) langBtn.textContent = t('langButton');
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.dataset.i18n;
+    if (el.tagName === 'INPUT' && el.hasAttribute('data-i18n-placeholder')) {
+      // handled below
+    } else {
+      el.textContent = t(k);
+    }
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    el.innerHTML = t(el.dataset.i18nHtml);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.dataset.i18nTitle);
+  });
+  updateWalletMenu();
+  if (!addr) document.getElementById('connBtn').textContent = t('connectWallet');
+  else document.getElementById('connBtn').textContent = tf('connectedWallet', walletProviderName || '');
+  if (refresh) renderUI();
+  renderPriceEstimate();
+}
+function toggleLang() {
+  lang = lang === 'zh' ? 'en' : 'zh';
+  try { localStorage.setItem(LANG_SK, lang); } catch {}
+  applyI18n({ refresh: true });
+}
+
+// ═════════════════ State ═════════════════
+let sgn = null, prv = null, ctr = null, tokenCtr = null, addr = null, curProv = null;
+let walletProvider = null, walletProviderName = '', walletAccountsHandler = null, walletChainHandler = null;
+let eip6963Wallets = [];
+let mmChecked = false, mmOk = false;
+let currentModelList = [];
+
+// ═════════════════ Wallet Detection ═════════════════
+function isFileProtocol() {
+  return window.location.protocol === 'file:';
+}
+
+function normWalletText(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+}
+function addWalletCandidate(list,id,name,provider,info=null) {
+  if (!provider || typeof provider.request !== 'function') return;
+  if (list.some(x => x.id === id)) return;
+  list.push({ id, name, provider, info });
+}
+function rememberEip6963Wallet(detail) {
+  if (!detail || !detail.provider) return;
+  const uuid = detail.info && detail.info.uuid;
+  if (uuid && eip6963Wallets.some(x => x.info && x.info.uuid === uuid)) return;
+  if (eip6963Wallets.some(x => x.provider === detail.provider)) return;
+  eip6963Wallets.push({ info: detail.info || {}, provider: detail.provider });
+}
+function requestEip6963Wallets() {
+  try { window.dispatchEvent(new Event('eip6963:requestProvider')); } catch {}
+}
+function walletInfoText(w) {
+  return normWalletText([w && w.info && w.info.name, w && w.info && w.info.rdns].filter(Boolean).join(' '));
+}
+function eip6963Match(id) {
+  const tests = {
+    metamask:w => walletInfoText(w).includes('metamask'),
+    okx:w => walletInfoText(w).includes('okx') || walletInfoText(w).includes('okex'),
+    phantom:w => walletInfoText(w).includes('phantom'),
+  };
+  return eip6963Wallets.find(tests[id] || (() => false)) || null;
+}
+function isOkxProvider(p) { return !!(p && (p.isOkxWallet || p.isOKXWallet || p.isOKExWallet)); }
+function isPhantomProvider(p) { return !!(p && p.isPhantom); }
+function isMetaMaskProvider(p) { return !!(p && p.isMetaMask && !isOkxProvider(p) && !isPhantomProvider(p) && !p.isCoinbaseWallet); }
+function collectInjectedProviders() {
+  const eth = window.ethereum;
+  const arr = Array.isArray(eth && eth.providers) ? eth.providers.slice() : [];
+  if (eth) arr.push(eth);
+  if (window.okxwallet) arr.push(window.okxwallet);
+  if (window.okxwallet && window.okxwallet.ethereum) arr.push(window.okxwallet.ethereum);
+  if (window.phantom && window.phantom.ethereum) arr.push(window.phantom.ethereum);
+  return arr.filter((p,i,a) => p && typeof p.request === 'function' && a.indexOf(p) === i);
+}
+function walletCandidates() {
+  const list = [];
+  const mm = eip6963Match('metamask'), okx = eip6963Match('okx'), phantom = eip6963Match('phantom');
+  if (mm) addWalletCandidate(list,'metamask','MetaMask',mm.provider,mm.info);
+  if (okx) addWalletCandidate(list,'okx','OKX Web3',okx.provider,okx.info);
+  if (phantom) addWalletCandidate(list,'phantom','Phantom',phantom.provider,phantom.info);
+  const injected = collectInjectedProviders();
+  addWalletCandidate(list,'metamask','MetaMask',injected.find(isMetaMaskProvider));
+  addWalletCandidate(list,'okx','OKX Web3',injected.find(isOkxProvider));
+  addWalletCandidate(list,'phantom','Phantom',injected.find(isPhantomProvider));
+  return list;
+}
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+async function discoverWalletCandidates() {
+  requestEip6963Wallets();
+  await delay(120);
+  return walletCandidates();
+}
+function selectedWalletCandidate(walletId='') {
+  const want = String(walletId || '').trim();
+  if (!want) return null;
+  return walletCandidates().find(x => x.id === want) || null;
+}
+function updateWalletMenu() {
+  const menu = document.getElementById('walletMenu');
+  if (!menu) return;
+  const found = new Set(walletCandidates().map(x => x.id));
+  menu.querySelectorAll('.wallet-choice').forEach(btn => {
+    const ok = found.has(btn.dataset.wallet);
+    btn.disabled = !ok;
+    const sub = btn.querySelector('small');
+    if (sub) sub.textContent = t(ok ? 'walletAvailable' : 'walletUnavailable');
+  });
+}
+function openWalletMenu() {
+  if (addr) return;
+  requestEip6963Wallets();
+  updateWalletMenu();
+  setTimeout(updateWalletMenu, 180);
+  const menu = document.getElementById('walletMenu');
+  if (menu) menu.classList.toggle('hidden');
+}
+function clearWalletEventHandlers() {
+  if (!walletProvider) return;
+  const off = walletProvider.removeListener || walletProvider.off;
+  if (typeof off === 'function') {
+    if (walletAccountsHandler) off.call(walletProvider, 'accountsChanged', walletAccountsHandler);
+    if (walletChainHandler) off.call(walletProvider, 'chainChanged', walletChainHandler);
+  }
+  walletAccountsHandler = null; walletChainHandler = null;
+}
+function checkMetaMask() {
+  const w = document.getElementById('mmWarning');
+  mmChecked = true;
+  requestEip6963Wallets();
+  updateWalletMenu();
+  if (walletCandidates().length) {
+    mmOk = true;
+    w.style.display = 'none';
+  } else if (isFileProtocol()) {
+    mmOk = false;
+    w.style.display = 'block';
+  } else {
+    mmOk = false;
+    w.style.display = 'block';
+  }
+}
+
+// Retry mechanism — wallets may inject asynchronously
+let _mmRetries = 0;
+function mmRetryLoop() {
+  checkMetaMask();
+  if (!mmOk && _mmRetries < 30) {
+    _mmRetries++;
+    setTimeout(mmRetryLoop, 200);
+  }
+}
+
+// ═════════════════ Init ═════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Tab switching
+  document.querySelectorAll('#tabs button').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  window.addEventListener('eip6963:announceProvider', (e) => {
+    rememberEip6963Wallet(e && e.detail);
+    mmOk = true;
+    document.getElementById('mmWarning').style.display = 'none';
+    updateWalletMenu();
+  });
+
+  // Start wallet detection after the EIP-6963 listener is ready.
+  mmRetryLoop();
+  requestEip6963Wallets();
+  setTimeout(updateWalletMenu, 180);
+  const modelInput = document.getElementById('f_modelId');
+  if (modelInput) modelInput.addEventListener('input', handleModelIdEdit);
+  renderPriceEstimate();
+
+  applyI18n();
+});
+
+function switchTab(id) {
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${id}`));
+  if (id === 'register') resetRegisterMode();
+  if (id === 'models') refreshProvider();
+  if (id === 'services') loadServices();
+}
+
+function handleModelIdEdit() {
+  resetRegisterMode();
+}
+function resetRegisterMode() {
+  curProv = null;
+  const badge = document.getElementById('regBadge');
+  if (badge) {
+    badge.textContent = t('regBadgeFill');
+    badge.className = 'badge blue';
+  }
+  const announce = document.getElementById('btnAnnounce');
+  if (announce) {
+    announce.style.display = 'inline-flex';
+    announce.disabled = !addr;
+    announce.textContent = t('regBtnAnnounce');
+  }
+  const update = document.getElementById('btnUpdate');
+  if (update) update.style.display = 'none';
+}
+// ═════════════════ Wallet Connect ═════════════════
+async function doConnect(walletId) {
+  await discoverWalletCandidates();
+  const wallet = selectedWalletCandidate(walletId);
+  if (!wallet) {
+    checkMetaMask();
+    if (!mmOk) { toast(t('mmTitle'), 'err'); return; }
+    toast(t('mmTitle'), 'err');
+    return;
+  }
+  const provider = wallet.provider;
+  try {
+    clearWalletEventHandlers();
+    const menu = document.getElementById('walletMenu');
+    if (menu) menu.classList.add('hidden');
+    const accs = await provider.request({ method: 'eth_requestAccounts' });
+    addr = ethers.getAddress(accs[0]);
+
+    const cid = await provider.request({ method: 'eth_chainId' });
+    if (BigInt(cid) !== CHAIN_ID) {
+      try {
+        await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x' + CHAIN_ID.toString(16) }] });
+      } catch (e) {
+        if (e.code === 4902 || String(e.code) === '4902') {
+          await provider.request({ method: 'wallet_addEthereumChain', params: [{
+            chainId: '0x' + CHAIN_ID.toString(16), chainName: 'Ethereum Mainnet',
+            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: [MAINNET_ADD_RPC], blockExplorerUrls: ['https://etherscan.io'],
+          }]});
+        } else throw e;
+      }
+    }
+    walletProvider = provider;
+    walletProviderName = wallet.name;
+    prv = new ethers.BrowserProvider(provider);
+    sgn = await prv.getSigner();
+    const abi = await loadABI();
+    ctr = new ethers.Contract(CONTRACT_ADDR, abi, sgn);
+    tokenCtr = new ethers.Contract(TOKEN_ADDR, TOKEN_ABI || [
+      'function balanceOf(address) view returns (uint256)',
+      'function decimals() view returns (uint8)',
+      'function symbol() view returns (string)'
+    ], sgn);
+
+    document.getElementById('connDot').classList.remove('off');
+    document.getElementById('addrDisp').textContent = short(addr);
+    document.getElementById('connBtn').textContent = tf('connectedWallet', walletProviderName);
+    document.getElementById('connBtn').disabled = true;
+    document.getElementById('discBtn').classList.remove('hidden');
+    document.getElementById('netTag').textContent = 'Mainnet';
+    document.getElementById('netTag').className = 'tag ok';
+	    const searchEl = document.getElementById('modelSearchAddr');
+	    if (searchEl && !searchEl.value.trim()) searchEl.value = addr;
+	    document.getElementById('btnAnnounce').disabled = false;
+    document.getElementById('balDisp').style.display = 'inline';
+    document.getElementById('mmWarning').style.display = 'none';
+
+    await refreshAll();
+    if (provider.on) {
+      walletAccountsHandler = () => location.reload();
+      walletChainHandler = () => location.reload();
+      provider.on('accountsChanged', walletAccountsHandler);
+      provider.on('chainChanged', walletChainHandler);
+    }
+    toast(`${tf('connectedWallet', walletProviderName)}: ${short(addr)}`, 'ok');
+  } catch (err) {
+    console.error(err);
+    toast('Connect failed: ' + (err.message || err), 'err');
+  }
+}
+function disconnectWallet() {
+  clearWalletEventHandlers();
+  sgn = null; prv = null; ctr = null; tokenCtr = null; addr = null; curProv = null; walletProvider = null; walletProviderName = '';
+  currentModelList = [];
+  document.getElementById('connDot').classList.add('off');
+  document.getElementById('addrDisp').textContent = t('notConnected');
+  document.getElementById('connBtn').textContent = t('connectWallet');
+  document.getElementById('connBtn').disabled = false;
+  document.getElementById('discBtn').classList.add('hidden');
+  document.getElementById('walletMenu').classList.add('hidden');
+	  const searchEl = document.getElementById('modelSearchAddr');
+	  if (searchEl) searchEl.value = '';
+  document.getElementById('btnAnnounce').disabled = true;
+  document.getElementById('btnUpdate').style.display = 'none';
+  document.getElementById('balDisp').style.display = 'none';
+  document.getElementById('chainModelList').innerHTML = `<div class="empty">${t('modelsEmpty')}</div>`;
+  document.getElementById('modelSummary').textContent = '';
+  clearModelUpdate();
+  document.getElementById('svcList').innerHTML = `<div class="empty">${t('svcEmpty')}</div>`;
+  document.getElementById('svcSummary').textContent = '';
+  document.getElementById('regBadge').textContent = t('regBadgeFill');
+  document.getElementById('regBadge').className = 'badge blue';
+  updateWalletMenu();
+}
+
+// ═════════════════ Refresh ═════════════════
+async function refreshAll() {
+  if (!ctr || !addr) return;
+  try { await Promise.all([refreshWallet(), refreshProvider(), refreshDtokenPrice()]); } catch (e) { console.error(e); }
+}
+
+async function refreshWallet() {
+  try {
+    const [bal, eth] = await Promise.all([(tokenCtr || ctr).balanceOf(addr), prv.getBalance(addr)]);
+    document.getElementById('balDisp').textContent = fmtD(bal);
+  } catch (e) { console.error(e); }
+}
+
+async function refreshProvider() {
+  if (!ctr || !addr) {
+    document.getElementById('chainModelList').innerHTML = `<div class="empty">${t('modelsEmpty')}</div>`;
+    document.getElementById('modelSummary').textContent = '';
+    return;
+  }
+  try {
+    ensureModelSearchDefaults();
+    const modelsPanelActive = document.getElementById('panel-models')?.classList.contains('active');
+    const searchAddr = modelsPanelActive ? modelSearchAddress() : addr;
+    if (!searchAddr) {
+      document.getElementById('chainModelList').innerHTML = `<div class="empty">${t('modelsBadAddress')}</div>`;
+      document.getElementById('modelSummary').textContent = '';
+      return;
+    }
+    const lookback = modelLookbackBlocks();
+    const current = await prv.getBlockNumber();
+    const from = Math.max(0, current - lookback);
+    const models = await loadProviderModels(searchAddr, { fromBlock: from, toBlock: current });
+    renderProviderModelList(models);
+    document.getElementById('modelSummary').textContent = tf('modelsSummary', from, current, models.length);
+    renderPriceEstimate();
+  } catch (e) { console.error(e); curProv = null; }
+}
+
+async function providerModelCountOf(operator) {
+  try { return (await loadProviderModels(operator)).length; } catch { return curProv?.version > 0 ? 1 : 0; }
+}
+
+function ensureModelSearchDefaults() {
+  const searchEl = document.getElementById('modelSearchAddr');
+  const lookbackEl = document.getElementById('modelLookback');
+  if (searchEl && !searchEl.value.trim() && addr) searchEl.value = addr;
+  if (lookbackEl && !lookbackEl.value) lookbackEl.value = String(PROVIDER_EVENT_LOOKBACK);
+}
+function modelSearchAddress() {
+  const value = document.getElementById('modelSearchAddr')?.value?.trim() || addr || '';
+  try { return ethers.getAddress(value); } catch { return ''; }
+}
+function modelLookbackBlocks() {
+  const n = Number(document.getElementById('modelLookback')?.value || PROVIDER_EVENT_LOOKBACK);
+  if (!Number.isFinite(n) || n <= 0) return PROVIDER_EVENT_LOOKBACK;
+  return Math.max(10, Math.min(500000, Math.floor(n)));
+}
+async function queryFilterChunked(filter, fromBlock, toBlock, chunkSize = PROVIDER_EVENT_CHUNK) {
+  const events = [];
+  let from = Number(fromBlock), to = Number(toBlock);
+  if (!Number.isFinite(from) || !Number.isFinite(to) || from > to) return events;
+  const step = Math.max(10, Number(chunkSize) || PROVIDER_EVENT_CHUNK);
+  for (let start = from; start <= to; start += step + 1) {
+    const end = Math.min(to, start + step);
+    try {
+      events.push(...await ctr.queryFilter(filter, start, end));
+    } catch (e) {
+      if (step <= 10) throw e;
+      events.push(...await queryFilterChunked(filter, start, end, Math.floor(step / 2)));
+    }
+  }
+  return events;
+}
+async function loadProviderModels(operator, range = {}) {
+  const out = new Map();
+  try {
+    const current = range.toBlock ?? await prv.getBlockNumber();
+    const from = range.fromBlock ?? Math.max(0, current - PROVIDER_EVENT_LOOKBACK);
+    const filter = ctr.filters.ProviderAnnounced(operator);
+    const events = (await queryFilterChunked(filter, from, current))
+      .map(ev => ['announce', ev])
+      .sort((a, b) => (a[1].blockNumber - b[1].blockNumber) || ((a[1].index ?? a[1].logIndex ?? 0) - (b[1].index ?? b[1].logIndex ?? 0)));
+    for (const [kind, ev] of events) {
+      const p = await (kind === 'model' ? providerFromModelEvent(ev) : providerFromAnnounceEvent(ev));
+      const key = String(p.modelId || p.providerId || p.metadataHash || '').toLowerCase();
+      if (key) out.set(key, p);
+    }
+  } catch (e) { console.warn('provider event scan failed', e); }
+  return [...out.values()].filter(p => p.operator && p.operator.toLowerCase() === String(operator).toLowerCase());
+}
+
+async function loadProviderHandshakes(operator) {
+  const out = new Map();
+  if (!ctr || !prv || !operator) return [];
+  const current = await prv.getBlockNumber();
+  const lookback = modelLookbackBlocks();
+  const from = Math.max(0, current - lookback);
+  const filter = ctr.filters.HandshakeOpened(null, null, ethers.getAddress(operator));
+  const events = await queryFilterChunked(filter, from, current);
+  const byId = new Map();
+  for (const ev of events) {
+    const id = String(ev.args?.handshakeId || ev.args?.[0] || '').toLowerCase();
+    if (id) byId.set(id, ev);
+  }
+  for (const [id, ev] of byId) {
+    try {
+      const h = normalizeHandshake(id, await ctr.getHandshake(id));
+      h.openedBlock = ev.blockNumber;
+      h.providerOfferId = h.providerOfferId || ev.args?.offerId || ev.args?.[5] || ZERO;
+      h.eventMetadataHash = ev.args?.metadataHash || ev.args?.[6] || ZERO;
+      out.set(id, h);
+    } catch (e) {
+      console.warn('provider handshake read failed', id, e);
+    }
+  }
+  return [...out.values()].sort((a, b) => Number(b.openedBlock || 0) - Number(a.openedBlock || 0));
+}
+
+function renderProviderModelList(models) {
+  const el = document.getElementById('chainModelList');
+  if (!el) return;
+  currentModelList = models;
+  if (!models.length) {
+    el.innerHTML = `<div class="empty">${t('modelsNone')}</div>`;
+    return;
+  }
+  el.innerHTML = models.map((p, i) => {
+    const estimate = modelPriceEstimate(p.inputTokenPrice, p.outputTokenPrice);
+    const own = !!(addr && p.operator && p.operator.toLowerCase() === addr.toLowerCase());
+    return `
+    <div class="row" style="padding:12px;">
+      <div class="row-top">
+        <strong>${esc(p.modelId || '-')}</strong>
+        <span class="badge blue">v${esc(String(p.version || 0))}</span>
+      </div>
+      <div class="row-meta">
+        <span>Offer: ${esc(short(p.providerId || p.metadataHash || '-'))}</span>
+        <span>${t('modelEndpoint')}: ${esc(short(p.endpoint))}</span>
+        <span>${t('modelInput')}: ${fmtD(p.inputTokenPrice)} / ${t('tokenUnit')}</span>
+        <span>${t('modelOutput')}: ${fmtD(p.outputTokenPrice)} / ${t('tokenUnit')}</span>
+        <span>${t('modelMinEscrow')}: ${fmtD(p.minEscrowAmount)}</span>
+      </div>
+      ${estimate ? `<div class="price-mini">${esc(estimate)}</div>` : ''}
+      <div class="row-act">
+        <button class="btn btn-sm" onclick="selectProviderModel(${i})" ${own ? '' : 'disabled'}>${t('modelEdit')}</button>
+      </div>
+    </div>
+  `}).join('');
+}
+
+function selectProviderModel(index) {
+  const p = currentModelList[Number(index)];
+  if (!p) return;
+  if (!addr || !p.operator || p.operator.toLowerCase() !== addr.toLowerCase()) {
+    toast(t('modelUpdateOwnOnly'), 'err');
+    return;
+  }
+  curProv = p;
+  document.getElementById('u_modelId').value = p.modelId || '';
+  document.getElementById('u_modelName').value = p.displayName || p.modelName || p.modelId || '';
+  document.getElementById('u_endpoint').value = p.endpoint || '';
+  document.getElementById('u_inputPrice').value = dtokenInputValue(p.inputTokenPrice ?? 0n);
+  document.getElementById('u_outputPrice').value = dtokenInputValue(p.outputTokenPrice ?? 0n);
+  document.getElementById('u_minEscrow').value = dtokenInputValue(p.minEscrowAmount ?? 0n);
+  document.getElementById('modelUpdateTarget').textContent = `${p.modelId || '-'} · ${short(p.providerId || p.metadataHash || '')}`;
+  document.getElementById('modelUpdateResult').textContent = '';
+  document.getElementById('modelUpdateBox').classList.remove('hidden');
+}
+function clearModelUpdate() {
+  curProv = null;
+  const box = document.getElementById('modelUpdateBox');
+  if (box) box.classList.add('hidden');
+  ['u_modelId','u_modelName','u_endpoint','u_inputPrice','u_outputPrice','u_minEscrow'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const res = document.getElementById('modelUpdateResult');
+  if (res) res.textContent = '';
+}
+
+function renderUI() {
+  if (curProv) refreshProvider();
+  if (document.getElementById('panel-models').classList.contains('active')) refreshProvider();
+  if (document.getElementById('panel-services').classList.contains('active')) loadServices();
+}
+
+// ═════════════════ Announce ═════════════════
+async function doAnnounce() {
+  if (!ctr || !sgn) return toast(t('connectFirst'), 'err');
+  const signerAddr = addr;
+  const modelId = document.getElementById('f_modelId').value.trim();
+  const modelName = document.getElementById('f_modelName').value.trim() || modelId;
+  const endpoint = document.getElementById('f_endpoint').value.trim();
+  const inPrice = document.getElementById('f_inputPrice').value || '1';
+  const outPrice = document.getElementById('f_outputPrice').value || '2';
+  const minEscrow = document.getElementById('f_minEscrow').value || '0';
+
+  if (!modelId || !endpoint) return toast(t('fillRequired'), 'err');
+  if (!ethers.isAddress(signerAddr)) return toast(t('invalidSigner'), 'err');
+
+  let inputTokenPrice, outputTokenPrice, minEscrowAmount;
+  try {
+    inputTokenPrice = parseDTokenInput(inPrice);
+    outputTokenPrice = parseDTokenInput(outPrice);
+    minEscrowAmount = parseDTokenInput(minEscrow);
+  } catch {
+    return toast(t('fillRequired'), 'err');
+  }
+	  if (inputTokenPrice === 0n && outputTokenPrice === 0n) return toast(t('fillRequired'), 'err');
+  try {
+    const existing = await loadProviderModels(signerAddr);
+    if (existing.some(p => String(p.modelId || '').toLowerCase() === modelId.toLowerCase())) {
+      return toast(t('regExistingUseModels'), 'err');
+    }
+  } catch (e) {
+    console.warn('duplicate model check failed', e);
+  }
+
+	  const metadata = buildProviderMetadata({
+    signerAddr,
+    modelId,
+    modelName,
+    endpoint,
+    inputTokenPrice,
+    outputTokenPrice,
+    minEscrowAmount
+  });
+  const metaHash = hashJson(metadata);
+  const upd = { metadataURI: dataJsonUri(metadata), metadataHash: metaHash };
+
+  const btn = document.getElementById('btnAnnounce');
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const tx = await ctr.announceProvider(upd);
+    toast(`${t('txSent')}: ${short(tx.hash)}`, 'nfo');
+    document.getElementById('regResult').innerHTML = `<span style="color:var(--accent)">${t('waiting')} ${short(tx.hash)}</span>`;
+    const rc = await tx.wait();
+    document.getElementById('regResult').innerHTML = `<span style="color:var(--brown-dark)">✓ ${t('announceDone')} — ${t('block')} ${rc.blockNumber}</span>`;
+    toast(t('announceDone'), 'ok');
+    resetRegisterMode();
+    await refreshAll();
+  } catch (err) {
+    const msg = parseErr(err);
+    document.getElementById('regResult').innerHTML = `<span style="color:var(--brown-dark)">✗ ${esc(msg)}</span>`;
+    toast(t('txFailed') + ': ' + msg, 'err');
+  } finally { btn.disabled = false; btn.textContent = t('regBtnAnnounce'); }
+}
+
+function buildProviderMetadata({ signerAddr, modelId, modelName, endpoint, inputTokenPrice, outputTokenPrice, minEscrowAmount }) {
+  return {
+	    protocol: 'dtoken-v5',
+	    schema: 'dtoken.provider.metadata.v17',
+	    model_id: modelId,
+    modelId,
+    model_name: modelName,
+    displayName: modelName,
+    endpoint,
+    pricing: {
+      unit: 'dtoken_base_units',
+      inputTokenPrice: inputTokenPrice.toString(),
+      outputTokenPrice: outputTokenPrice.toString(),
+    },
+	    min_escrow_amount: minEscrowAmount.toString(),
+	    minEscrowAmount: minEscrowAmount.toString(),
+	    provider: signerAddr,
+	  };
+}
+
+async function doUpdateModel() {
+  if (!ctr || !sgn || !addr) return toast(t('connectFirst'), 'err');
+  if (!curProv) return toast(t('modelUpdateEmpty'), 'err');
+  if (!curProv.operator || curProv.operator.toLowerCase() !== addr.toLowerCase()) return toast(t('modelUpdateOwnOnly'), 'err');
+  const signerAddr = addr;
+  const modelId = document.getElementById('u_modelId').value.trim();
+  const modelName = document.getElementById('u_modelName').value.trim() || modelId;
+  const endpoint = document.getElementById('u_endpoint').value.trim();
+  const inPrice = document.getElementById('u_inputPrice').value || '1';
+  const outPrice = document.getElementById('u_outputPrice').value || '2';
+  const minEscrow = document.getElementById('u_minEscrow').value || '0';
+  if (!modelId || !endpoint) return toast(t('fillRequired'), 'err');
+  let inputTokenPrice, outputTokenPrice, minEscrowAmount;
+  try {
+    inputTokenPrice = parseDTokenInput(inPrice);
+    outputTokenPrice = parseDTokenInput(outPrice);
+    minEscrowAmount = parseDTokenInput(minEscrow);
+  } catch {
+    return toast(t('fillRequired'), 'err');
+  }
+  if (inputTokenPrice === 0n && outputTokenPrice === 0n) return toast(t('fillRequired'), 'err');
+  const metadata = buildProviderMetadata({
+    signerAddr,
+    modelId,
+    modelName,
+    endpoint,
+    inputTokenPrice,
+    outputTokenPrice,
+    minEscrowAmount
+  });
+  const upd = { metadataURI: dataJsonUri(metadata), metadataHash: hashJson(metadata) };
+  const btn = document.getElementById('btnModelUpdate');
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const tx = await ctr.announceProvider(upd);
+    toast(`${t('txSent')}: ${short(tx.hash)}`, 'nfo');
+    document.getElementById('modelUpdateResult').innerHTML = `<span style="color:var(--accent)">${t('waiting')} ${short(tx.hash)}</span>`;
+    const rc = await tx.wait();
+    document.getElementById('modelUpdateResult').innerHTML = `<span style="color:var(--brown-dark)">✓ ${t('announceDone')} — ${t('block')} ${rc.blockNumber}</span>`;
+    toast(t('announceDone'), 'ok');
+    clearModelUpdate();
+    await refreshProvider();
+  } catch (err) {
+    const msg = parseErr(err);
+    document.getElementById('modelUpdateResult').innerHTML = `<span style="color:var(--brown-dark)">✗ ${esc(msg)}</span>`;
+    toast(t('txFailed') + ': ' + msg, 'err');
+  } finally { btn.disabled = false; btn.textContent = t('modelUpdateBtn'); }
+}
+
+// ═════════════════ My dToken Services (read-only) ═════════════════
+
+async function loadServices() {
+  const list = document.getElementById('svcList');
+  const summary = document.getElementById('svcSummary');
+  if (!ctr || !addr) { list.innerHTML = `<div class="empty">${t('svcEmpty')}</div>`; summary.textContent = ''; return; }
+  try {
+    const all = await loadProviderHandshakes(addr);
+    if (!all.length) {
+      list.innerHTML = `<div class="empty">${t('svcNone')}</div>`;
+      summary.textContent = tf('svcSummary', 0, 0, 0, 0, 0);
+      return;
+    }
+	    const open = all.filter(h => h.status === 1);
+	    const pending = all.filter(h => h.status === 2);
+	    const unsettled = [...pending, ...open];
+	    const closed = all.filter(h => h.status === 3 || h.status === 4);
+	    summary.textContent = tf('svcSummary', all.length, unsettled.length, closed.length);
+	
+	    list.innerHTML = `
+	      ${renderServiceSection(t('svcOpenTitle'), t('svcOpenHint'), unsettled, false)}
+	      ${renderServiceSection(t('svcClosedTitle'), t('svcClosedHint'), closed, true)}
+	    `;
+	  } catch (err) { list.innerHTML = `<div class="empty">${esc(err.message)}</div>`; summary.textContent = ''; }
+	}
+	
+	function renderServiceSection(title, hint, items, settledMode) {
+	  return `<div class="service-section">
+	    <div class="section-title"><span>${esc(title)}</span><small>${items.length}</small></div>
+	    ${hint ? `<div class="form-hint" style="margin-bottom:8px">${esc(hint)}</div>` : ''}
+	    ${items.length ? items.map(h => renderServiceRow(h, settledMode)).join('') : `<div class="empty">${t('svcNone')}</div>`}
+	  </div>`;
+	}
+	function serviceStatus(h) {
+	  const st = Number(h.status);
+	  if (st === 1) return { badge:'green', label:t('svcStatusOpen') };
+	  if (st === 2) return { badge:'orange', label:t('svcStatusPending') };
+	  if (st === 3) return { badge:'blue', label:t('svcStatusSettled') };
+	  if (st === 4) return { badge:'red', label:t('svcStatusCancelled') };
+	  return { badge:'red', label:t('svcStatusNone') };
+	}
+	function dtokenMin(a, b) {
+	  a = toBI(a); b = toBI(b);
+	  return a < b ? a : b;
+	}
+function settledProviderAmount(h) {
+  const escrow = toBI(h.escrowAmount);
+  const pending = toBI(h.pendingCloseAmount);
+  return dtokenMin(pending, escrow);
+}
+	function row(k, v) {
+	  return `<div class="meta-k">${esc(k)}:</div><div class="meta-v">${v}</div>`;
+	}
+	function renderServiceRow(h) {
+	  const { badge, label } = serviceStatus(h);
+  const st = Number(h.status);
+  const rows = [
+    row(t('svcUser'), short(h.userWallet)),
+    row(t('svcProvider'), short(h.providerOperator)),
+    row('Offer', short(h.providerOfferId || '-')),
+    row(t('svcEscrow'), fmtD(h.escrowAmount)),
+  ];
+  if (st === 2) {
+    rows.push(row(t('svcChallengeDeadline'), ts(h.challengeDeadline)));
+  }
+	  if (st === 3 || st === 4) {
+    const providerAmount = st === 3 ? settledProviderAmount(h) : 0n;
+    const refund = toBI(h.escrowAmount) > providerAmount ? toBI(h.escrowAmount) - providerAmount : 0n;
+    rows.push(row(t('svcProviderAmount'), fmtD(providerAmount)));
+    rows.push(row(t('svcUserRefund'), fmtD(refund)));
+    const proof = h.pendingSettlementProofHash;
+    if (proof && proof !== ZERO) rows.push(row(t('svcCredential'), short(proof)));
+  }
+	
+	  return `<div class="row">
+	    <div class="row-top">
+	      <span class="row-id">${short(h.id)}</span>
+	      <span class="badge ${badge}">${label}</span>
+	    </div>
+	    <div class="meta-grid">
+	      ${rows.join('')}
+	    </div>
+	  </div>`;
+	}
+
+// Settlement & exit is handled by the server-side agent.
+// This page shows on-chain dToken service status only.
+
+// ═════════════════ Helpers ═════════════════
+function short(s) { if (!s || s.length < 20) return String(s||'-'); return s.slice(0,8)+'...'+s.slice(-6); }
+function ts(n) { const v = Number(n); return v ? new Date(v*1000).toLocaleString() : '-'; }
+function fmtD(v) {
+  try {
+    const raw = BigInt(v ?? 0n);
+    if (DTOKEN_DECIMALS === 0) return Number(raw).toLocaleString() + ' DTOKEN';
+    const text = ethers.formatUnits(raw, DTOKEN_DECIMALS);
+    const [wholeRaw, fracRaw = ''] = text.split('.');
+    const whole = BigInt(wholeRaw || '0');
+    const compact = compactInt(whole);
+    if (compact !== whole.toString()) return compact + ' DTOKEN';
+    const visible = whole === 0n && fracRaw.startsWith('000000') ? 18 : 6;
+    const frac = fracRaw.slice(0, visible).replace(/0+$/, '');
+    return (frac ? `${wholeRaw}.${frac}` : wholeRaw) + ' DTOKEN';
+  } catch { return String(v ?? '0'); }
+}
+function compactInt(n) {
+  n = BigInt(n || 0);
+  const units = [['Q',1000000000000000n],['T',1000000000000n],['B',1000000000n],['M',1000000n],['K',1000n]];
+  for (const [suffix, div] of units) {
+    if (n >= div) {
+      const x = Number((n * 10n) / div) / 10;
+      return x.toFixed(x >= 100 ? 0 : 1) + suffix;
+    }
+  }
+  return n.toString();
+}
+function toBI(v) { try { return BigInt(v || 0); } catch { return 0n; } }
+function dtokenUnit() { return 10n ** BigInt(DTOKEN_DECIMALS); }
+function parseDTokenInput(v) {
+  const text = String(v ?? '').trim();
+  if (!/^(?:\d+|\d+\.\d{0,18}|\.\d{1,18})$/.test(text)) throw new Error('invalid dToken amount');
+  return ethers.parseUnits(text, DTOKEN_DECIMALS);
+}
+function dtokenInputValue(raw) {
+  try {
+    if (DTOKEN_DECIMALS === 0) return String(raw ?? 0n);
+    const s = ethers.formatUnits(raw ?? 0n, DTOKEN_DECIMALS);
+    return s.replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+  } catch { return String(raw ?? '0'); }
+}
+function fmtUsd(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? '$' + n.toLocaleString(undefined, { maximumFractionDigits: n >= 1 ? 4 : 8 }) : t('usdUnavailable');
+}
+function fmtEth(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: 10 }) : '-';
+}
+function fmtPoolEth(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n.toLocaleString(undefined, { minimumFractionDigits: n < 1 ? 3 : 0, maximumFractionDigits: n < 1 ? 6 : 6 }) : '-';
+}
+function usdForDtoken(v) {
+  const n = Number(ethers.formatUnits(toBI(v), DTOKEN_DECIMALS));
+  return dtokenPrice.dtokenUsd && Number.isFinite(n) ? n * dtokenPrice.dtokenUsd : 0;
+}
+function ethForDtoken(v) {
+  const n = Number(ethers.formatUnits(toBI(v), DTOKEN_DECIMALS));
+  return dtokenPrice.ethPerDtoken && Number.isFinite(n) ? n * dtokenPrice.ethPerDtoken : 0;
+}
+function priceDisplayBase() {
+  let base = 1n;
+  if (!dtokenPrice.ethPerDtoken) return base * dtokenUnit();
+  // Display a 1-followed-by-zeroes DTOKEN amount whose ETH value is readable
+  // at roughly the 0.001 ETH scale, instead of tiny 1 DTOKEN fractions.
+  while (base < 1000000000000000000n && Number(base) * dtokenPrice.ethPerDtoken < 0.0009995) base *= 10n;
+  return base * dtokenUnit();
+}
+function poolPriceQuote() {
+  const base = priceDisplayBase();
+  return { base, label: fmtD(base), eth: ethForDtoken(base), usd: usdForDtoken(base) };
+}
+function feeLabel(fee) {
+  const n = Number(fee) / 10000;
+  return `${Number.isInteger(n) ? n : n.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}% fee`;
+}
+function activePriceSource() {
+  if (!dtokenPrice.loaded) return dtokenPrice.error || t('priceUnavailable');
+  const base = dtokenPrice.dtokenUsd ? t('priceSourceUsd') : t('priceSource');
+  return dtokenPrice.fee ? `${base} · ${feeLabel(dtokenPrice.fee)}` : base;
+}
+async function fetchEthUsdReference() {
+  const sources = [
+    {
+      url: 'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',
+      parse: (j) => Number(j?.ethereum?.usd),
+    },
+    {
+      url: 'https://api.coinbase.com/v2/prices/ETH-USD/spot',
+      parse: (j) => Number(j?.data?.amount),
+    },
+  ];
+  for (const source of sources) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 3500);
+    try {
+      const r = await fetch(source.url, { signal: ctrl.signal, cache: 'no-store' });
+      if (!r.ok) continue;
+      const price = source.parse(await r.json());
+      if (Number.isFinite(price) && price > 0) return price;
+    } catch {}
+    finally { clearTimeout(timer); }
+  }
+  return 0;
+}
+async function refreshDtokenPrice({ force = false } = {}) {
+  if (!prv || dtokenPrice.loading) return;
+  if (!force && dtokenPrice.loaded && Date.now() - dtokenPrice.updatedAt < 60000) {
+    renderPriceEstimate();
+    return;
+  }
+  dtokenPrice.loading = true; dtokenPrice.error = '';
+  renderPriceEstimate();
+  try {
+    const factory = new ethers.Contract(UNI_V3_FACTORY, ['function getPool(address,address,uint24) view returns (address)'], prv);
+    const poolAbi = [
+      'function slot0() view returns (uint160 sqrtPriceX96,int24 tick,uint16 observationIndex,uint16 observationCardinality,uint16 observationCardinalityNext,uint8 feeProtocol,bool unlocked)',
+      'function token0() view returns (address)',
+      'function token1() view returns (address)',
+      'function liquidity() view returns (uint128)'
+    ];
+    let found = null;
+    for (const fee of DTOKEN_WETH_FEES) {
+      const poolAddr = await factory.getPool(TOKEN_ADDR, WETH_ADDR, fee);
+      if (!poolAddr || poolAddr === ethers.ZeroAddress) continue;
+      const pool = new ethers.Contract(poolAddr, poolAbi, prv);
+      const [slot, t0, t1, liquidity] = await Promise.all([pool.slot0(), pool.token0(), pool.token1(), pool.liquidity()]);
+      if (liquidity <= 0n) continue;
+      found = { poolAddr, fee, slot, t0, t1 };
+      break;
+    }
+    if (!found) throw new Error('DTOKEN/WETH active pool not found');
+    const { poolAddr, fee, slot, t0, t1 } = found;
+    const ethUsd = await fetchEthUsdReference();
+    const sqrt = Number(slot[0]) / 2 ** 96;
+    const raw = sqrt * sqrt;
+    let ethPerDtoken = 0;
+    const dScale = 10 ** DTOKEN_DECIMALS;
+    if (t0.toLowerCase() === TOKEN_ADDR.toLowerCase() && t1.toLowerCase() === WETH_ADDR.toLowerCase()) ethPerDtoken = raw * dScale / 1e18;
+    else if (t1.toLowerCase() === TOKEN_ADDR.toLowerCase() && t0.toLowerCase() === WETH_ADDR.toLowerCase()) ethPerDtoken = 1 / (raw * 1e18 / dScale);
+    if (!Number.isFinite(ethPerDtoken) || ethPerDtoken <= 0) throw new Error('Invalid pool price');
+    dtokenPrice = { loaded:true, loading:false, error:'', pool:poolAddr, fee, ethPerDtoken, dtokenPerEth:1/ethPerDtoken, ethUsd, dtokenUsd:ethUsd ? ethPerDtoken * ethUsd : 0, updatedAt:Date.now() };
+  } catch (e) {
+    dtokenPrice = { ...dtokenPrice, loaded:false, loading:false, error:e.message || String(e), updatedAt:Date.now() };
+  }
+  renderPriceEstimate();
+  if (document.getElementById('panel-models')?.classList.contains('active')) refreshProvider();
+}
+function modelPriceEstimate(inputPrice, outputPrice) {
+  if (!dtokenPrice.loaded) return '';
+  const inEth = ethForDtoken(inputPrice) * 1000000;
+  const outEth = ethForDtoken(outputPrice) * 1000000;
+  if (!dtokenPrice.dtokenUsd) return tf('perMillionTokens', `${fmtEth(inEth)} ETH`, `${fmtEth(outEth)} ETH`);
+  return tf(
+    'perMillionTokens',
+    `${fmtUsd(usdForDtoken(inputPrice) * 1000000)} / ${fmtEth(inEth)} ETH`,
+    `${fmtUsd(usdForDtoken(outputPrice) * 1000000)} / ${fmtEth(outEth)} ETH`,
+  );
+}
+function renderPriceEstimate() {
+  const ethEl = document.getElementById('dtEthPrice');
+  const usdEl = document.getElementById('modelUsdEstimate');
+  const srcEl = document.getElementById('priceSource');
+  if (ethEl) {
+    const q = poolPriceQuote();
+    ethEl.textContent = dtokenPrice.loading ? t('priceLoading')
+      : dtokenPrice.loaded ? `${q.label} ≈ ${fmtPoolEth(q.eth)} ETH${dtokenPrice.dtokenUsd ? ` ≈ ${fmtUsd(q.usd)}` : ''}`
+      : t('priceUnavailable');
+  }
+  const input = document.getElementById('f_inputPrice')?.value || '0';
+  const output = document.getElementById('f_outputPrice')?.value || '0';
+  const minEscrow = document.getElementById('f_minEscrow')?.value || '0';
+  let inputRaw = 0n, outputRaw = 0n, minEscrowRaw = 0n;
+  try { inputRaw = parseDTokenInput(input); outputRaw = parseDTokenInput(output); minEscrowRaw = parseDTokenInput(minEscrow); } catch {}
+  if (usdEl) usdEl.textContent = modelPriceEstimate(inputRaw, outputRaw) || '-';
+  if (srcEl) {
+    const escrowEth = ethForDtoken(minEscrowRaw);
+    const escrowUsd = usdForDtoken(minEscrowRaw);
+    const source = activePriceSource();
+    srcEl.textContent = dtokenPrice.loaded
+      ? `${source} · ${tf('minEscrowValue', fmtEth(escrowEth), dtokenPrice.dtokenUsd ? fmtUsd(escrowUsd) : t('usdUnavailable'))}`
+      : source;
+  }
+}
+function field(raw, name, index, fallback = undefined) {
+  return raw?.[name] ?? raw?.[index] ?? fallback;
+}
+function ustr(raw, name, index) {
+  return (field(raw, name, index, 0n) ?? 0n).toString();
+}
+function offerIdForLocal(operator, metadataHash) {
+  try { return ethers.keccak256(ethers.solidityPacked(['address','bytes32'], [ethers.getAddress(operator), metadataHash || ZERO])); }
+  catch { return ZERO; }
+}
+async function providerFromModelEvent(ev) { return providerFromAnnounceEvent(ev); }
+async function providerFromAnnounceEvent(ev) {
+  const a = ev.args || {};
+  const operator = a.provider || a[0];
+  const providerId = a.offerId || a[1] || ZERO;
+  const metadataHash = a.metadataHash || a[2] || ZERO;
+  const metadataURI = a.metadataURI || a[3] || '';
+  const metadata = await loadProviderMetadataURI(metadataURI);
+  return normalizeProvider(operator, { operator, providerId, metadataURI, metadataHash, metadata, version: a.version || a[4] || 0n });
+}
+function normalizeProvider(operator, raw) {
+  const metadata = raw.metadata || {};
+  const pricing = metadata.pricing || {};
+  const metadataHash = field(raw, 'metadataHash', 3, ZERO);
+  const providerId = field(raw, 'providerId', 16, ZERO) || offerIdForLocal(operator, metadataHash);
+  return {
+    operator: field(raw, 'operator', 0, operator),
+    serviceSigner: field(raw, 'operator', 0, operator),
+	    metadataURI: field(raw, 'metadataURI', 2, ''),
+	    metadataHash,
+	    endpoint: metadata.endpoint || field(raw, 'endpoint', 4, ''),
+	    modelId: metadata.modelId || metadata.model_id || metadata.displayName || metadata.display_name || field(raw, 'modelId', 5, ''),
+    displayName: metadata.displayName || metadata.display_name || metadata.model_name || metadata.modelName || metadata.modelId || metadata.model_id || field(raw, 'modelId', 5, ''),
+	    pricingPolicyHash: metadata.pricingPolicyHash || metadata.pricing_policy_hash || ZERO,
+    tokenizerHash: metadata.tokenizerHash || metadata.tokenizer_hash || ZERO,
+    inputTokenPrice: String(pricing.inputTokenPrice ?? pricing.input_token_price ?? field(raw, 'inputTokenPrice', 8, 0n)),
+    outputTokenPrice: String(pricing.outputTokenPrice ?? pricing.output_token_price ?? field(raw, 'outputTokenPrice', 9, 0n)),
+    minEscrowAmount: String(metadata.minEscrowAmount ?? metadata.min_escrow_amount ?? field(raw, 'minEscrowAmount', 10, 0n)),
+    defaultIdleTimeout: Number(metadata.defaultIdleTimeout ?? metadata.default_idle_timeout ?? 0),
+    active: true,
+    announcedAt: 0,
+    updatedAt: 0,
+    version: Number(field(raw, 'version', 15, 0n)),
+    providerId,
+  };
+}
+async function loadProviderMetadataURI(uri) {
+  const text = String(uri || '');
+  if (!text) return {};
+  try {
+    if (text.startsWith('data:')) {
+      const i = text.indexOf(',');
+      if (i < 0) return {};
+      const head = text.slice(0, i);
+      const body = text.slice(i + 1);
+      const json = head.includes(';base64') ? atob(body) : decodeURIComponent(body);
+      return JSON.parse(json);
+    }
+    if (/^https?:\/\//i.test(text)) {
+      const r = await fetch(text, { cache: 'no-store' });
+      if (r.ok) return await r.json();
+    }
+  } catch (e) { console.warn('provider metadata parse failed', e); }
+  return {};
+}
+function dataJsonUri(value) {
+  return `data:application/json;base64,${btoa(unescape(encodeURIComponent(stableJson(value))))}`;
+}
+function normalizeHandshake(id, raw) {
+  return {
+    id,
+    status: Number(field(raw, 'status', 0, 0)),
+    userWallet: field(raw, 'userWallet', 1, ZERO_ADDR),
+    providerOperator: field(raw, 'providerOperator', 2, ZERO_ADDR),
+    userSessionSigner: field(raw, 'userSessionSigner', 3, ZERO_ADDR),
+    handshakeCredentialHash: field(raw, 'handshakeCredentialHash', 4, ZERO),
+    escrowAmount: ustr(raw, 'escrowAmount', 5),
+    pendingCloseAmount: ustr(raw, 'pendingCloseAmount', 6),
+    challengeDeadline: Number(field(raw, 'challengeDeadline', 7, 0n)),
+    pendingSettlementProofHash: field(raw, 'pendingSettlementProofHash', 8, ZERO),
+    providerOfferId: field(raw, 'providerOfferId', 9, ZERO),
+	  };
+	}
+function trimAmount(s) {
+  return String(s).replace(/(\.\d*?[1-9])0+$/,'$1').replace(/\.0+$/,'');
+}
+function hashText(value) {
+  return ethers.keccak256(ethers.toUtf8Bytes(String(value ?? '')));
+}
+function hashJson(value) {
+  return hashText(stableJson(value));
+}
+function stableJson(value) {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(v => stableJson(v)).join(',')}]`;
+  return `{${Object.keys(value).sort().map(k => `${JSON.stringify(k)}:${stableJson(value[k])}`).join(',')}}`;
+}
+function esc(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s) { return esc(s).replace(/'/g,'&#39;'); }
+function parseErr(err) {
+  const msg = err?.reason || err?.message || String(err);
+  const map = {
+    ProviderInactive:t('errProviderInactive'),
+    HandshakeNotFound:t('errHandshakeNotFound'),
+    HandshakeNotOpen:t('errHandshakeNotOpen'),
+    InvalidSignature:t('errInvalidSignature'),
+    BudgetExceeded:t('errBudgetExceeded'),
+    Unauthorized:t('errUnauthorized'),
+    InvalidAmount:t('errInvalidAmount'),
+    ZeroAddress:t('errZeroAddress'),
+    NoConfirmedCredential:t('errNoConfirmedCredential'),
+    NonMonotonicSpend:t('errNonMonotonicSpend'),
+    IdleCancelNotReady:t('errIdleCancelNotReady'),
+    ChallengeStillActive:t('errChallengeStillActive'),
+    InvalidStatus:t('errInvalidStatus')
+  };
+  for (const [k,v] of Object.entries(map)) if (msg.includes(k)) return v + ' (' + k + ')';
+  return msg.length > 200 ? msg.slice(0,200)+'...' : msg;
+}
+function toast(msg, type) {
+  const c = document.getElementById('toast'), el = document.createElement('div');
+  el.className = `toast-msg ${type}`; el.textContent = msg; c.appendChild(el);
+  setTimeout(() => el.remove(), 8000);
+}
+</script>
+</body>
+</html>
