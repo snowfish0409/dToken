@@ -1,0 +1,7 @@
+interface:
+  display_name: "dToken Framework + Usage"
+  short_description: "Use dToken flows with spend monitoring"
+  brand_color: "#4B2E26"
+  default_prompt: "Use $dtoken-framework-usage-monitoring to check dToken model setup, remaining escrow, and spend-alert thresholds."
+policy:
+  allow_implicit_invocation: true
