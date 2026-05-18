@@ -32,6 +32,8 @@ The dToken ERC20 is intended to remain fixed. Protocol logic may be upgraded thr
 - `user/`: standalone dToken User app, including Chatbot, local Agent Gateway, local state, credential ledger, and migration tools.
 - `provider console/`: standalone browser console for Provider model announcements and handshake inspection.
 - `reseller/`: configurable Provider service node package for routing dToken requests to authorized model endpoints.
+- `chrome APP/`: Chrome App Mode package for the User app and Provider Console.
+- `dToken SKILL/`: usage-only agent skill for operating dToken flows, including usage and remaining-escrow monitoring.
 
 Runtime data, private keys, API keys, User chat history, local gateway profiles, and server ledgers are not included in this public package.
 
@@ -72,6 +74,44 @@ user/apps/dtoken-agent-gateway/data/
 ```
 
 This directory may contain API keys, chat history, gateway profiles, session signer material, and usage credentials. Treat exports and runtime data as sensitive authorization assets.
+
+## Chrome App Mode User and Provider Console
+
+For wallet-extension workflows, dToken also provides Chrome App Mode packages that keep the original browser-based wallet interaction model while launching as desktop-style apps.
+
+```text
+chrome APP/user/
+chrome APP/provider-console/
+```
+
+User app:
+
+```bash
+cd "chrome APP/user"
+npm install
+npm run start
+```
+
+Or double-click:
+
+```text
+dToken User Chrome.app
+```
+
+Provider Console:
+
+```bash
+cd "chrome APP/provider-console"
+npm run start
+```
+
+Or double-click:
+
+```text
+dToken Provider Chrome.app
+```
+
+The User app starts the local Agent Gateway at `http://127.0.0.1:8789/`. Provider Console starts a local static console at `http://127.0.0.1:8792/`. Wallet confirmations still happen through browser extensions such as MetaMask, OKX Web3, or Phantom.
 
 ## Provider Console
 
@@ -136,6 +176,40 @@ The service node runtime data and `.env` are sensitive. They can contain dToken 
 
 Read `reseller/README.md` for the complete Provider service node setup guide.
 
+## dToken Agent Skill
+
+The latest usage-only skill package is:
+
+```text
+dToken SKILL/
+```
+
+It is intended for Codex/OpenClaw-style agents that need to operate dToken as a User or Provider. It teaches the agent the usage flows for:
+
+- User app and Agent Gateway;
+- Provider Console on-chain model announcements;
+- Reseller service node setup;
+- upstream model API configuration;
+- wallet-based contract calls;
+- dToken escrow units, usage monitoring, remaining balance checks, and spend alerts;
+- common operational troubleshooting.
+
+It does not contain private keys, upstream API keys, runtime data, or development credentials, and it is not intended for Solidity development or internal app refactors.
+
+To install it in a Codex-compatible local skills directory:
+
+```bash
+mkdir -p ~/.codex/skills
+rm -rf ~/.codex/skills/dtoken-framework-usage-monitoring
+cp -R "dToken SKILL" ~/.codex/skills/dtoken-framework-usage-monitoring
+```
+
+Use it explicitly with:
+
+```text
+Use $dtoken-framework-usage-monitoring to check dToken model setup, remaining escrow, and spend-alert thresholds.
+```
+
 ## Contract Source
 
 The public Solidity source is in `contract release/`.
@@ -155,6 +229,7 @@ The ERC20 dToken has fixed supply and no post-deployment mint function. The prot
 - Provider Console module notes: `provider console/README.md`
 - Provider service node setup guide: `reseller/README.md`
 - Contract source notes: `contract release/README.md`
+- Usage-monitoring agent skill: `dToken SKILL/SKILL.md`
 
 ## Safety Checklist
 
@@ -165,6 +240,7 @@ The ERC20 dToken has fixed supply and no post-deployment mint function. The prot
 - Model names and dToken prices in Provider Console must match the Provider service node configuration.
 - Protocol settlement is based on User-signed cumulative dToken credentials.
 - High-frequency model calls are off-chain; only escrow, exits, claims, and final settlement touch the chain.
+- Monitor remaining escrow before long agent tasks. A client-side error does not always mean zero dToken usage if the upstream call already completed or partially streamed.
 
 ---
 
@@ -202,6 +278,8 @@ dToken ERC20 预计保持固定不变。协议逻辑可以通过 Safe 控制的 
 - `user/`：可独立运行的 dToken User 端，包含 Chatbot、本地 Agent Gateway、本地状态、凭证 ledger 和迁移工具。
 - `provider console/`：可独立运行的浏览器 Provider 控制台，用于模型上链声明和牵手查看。
 - `reseller/`：Provider 侧可配置的服务节点，用于把 dToken 请求路由到授权模型端点。
+- `chrome APP/`：Chrome App Mode User 端和 Provider Console。
+- `dToken SKILL/`：面向 agent 的 dToken 使用型 skill，包含用量与剩余托管监控提醒。
 
 公开包不包含运行数据、私钥、API Key、User 聊天记录、本地 Gateway profile 或服务器 ledger。
 
@@ -242,6 +320,44 @@ user/apps/dtoken-agent-gateway/data/
 ```
 
 其中可能包含 API Key、聊天记录、Gateway profile、session signer 材料和用量凭证。导出文件与运行数据都应视为敏感授权资产。
+
+## Chrome App Mode User 与 Provider Console
+
+对于需要浏览器插件钱包的使用场景，dToken 也提供 Chrome App Mode 版本。它保留原本网页端的钱包交互方式，但可以像桌面应用一样启动。
+
+```text
+chrome APP/user/
+chrome APP/provider-console/
+```
+
+User 端：
+
+```bash
+cd "chrome APP/user"
+npm install
+npm run start
+```
+
+或双击：
+
+```text
+dToken User Chrome.app
+```
+
+Provider Console：
+
+```bash
+cd "chrome APP/provider-console"
+npm run start
+```
+
+或双击：
+
+```text
+dToken Provider Chrome.app
+```
+
+User 端会在本地启动 Agent Gateway：`http://127.0.0.1:8789/`。Provider Console 会在本地启动静态控制台：`http://127.0.0.1:8792/`。钱包确认仍通过 MetaMask、OKX Web3、Phantom 等浏览器插件完成。
 
 ## Provider Console
 
@@ -306,6 +422,40 @@ curl http://127.0.0.1:8788/v1/models
 
 完整 Provider 服务节点配置流程见 `reseller/README.md`。
 
+## dToken Agent Skill
+
+最新版使用型 skill 位于：
+
+```text
+dToken SKILL/
+```
+
+它面向 Codex / OpenClaw 这类 agent，用于帮助 agent 按 dToken 的真实使用流程进行操作，包括：
+
+- User 端与 Agent Gateway 使用；
+- Provider Console 模型上链声明；
+- Reseller 服务节点配置；
+- 上游模型 API 配置；
+- 使用钱包调用 Ethereum 主网合约；
+- dToken 托管单位、用量监控、剩余托管检查和消耗提醒；
+- 常见使用问题排查。
+
+该 skill 不包含私钥、上游 API Key、运行数据或开发凭据，也不用于 Solidity 开发或内部应用重构。
+
+安装到 Codex-compatible 本地 skills 目录：
+
+```bash
+mkdir -p ~/.codex/skills
+rm -rf ~/.codex/skills/dtoken-framework-usage-monitoring
+cp -R "dToken SKILL" ~/.codex/skills/dtoken-framework-usage-monitoring
+```
+
+使用时可以明确调用：
+
+```text
+使用 $dtoken-framework-usage-monitoring，检查 dToken 模型配置、剩余托管和消耗提醒阈值。
+```
+
 ## 合约源码
 
 公开 Solidity 源码位于 `contract release/`。
@@ -325,6 +475,7 @@ dToken ERC20 固定总量，部署后没有继续 mint 函数。协议逻辑通�
 - Provider Console 模块说明：`provider console/README.md`
 - Provider 服务节点配置说明：`reseller/README.md`
 - 合约源码说明：`contract release/README.md`
+- 用量监控 agent skill：`dToken SKILL/SKILL.md`
 
 ## 安全检查
 
@@ -335,3 +486,4 @@ dToken ERC20 固定总量，部署后没有继续 mint 函数。协议逻辑通�
 - Provider Console 中声明的模型名和 dToken 价格必须与 Provider 服务节点配置匹配。
 - 协议结算以 User 签名的累计 dToken 用量凭证为准。
 - 高频模型调用在线下完成；链上只处理托管、退出、认领和最终结算。
+- 长任务开始前应检查剩余托管额度。客户端报错不一定代表没有消耗 dToken，因为上游调用可能已经完成或部分流式输出。
